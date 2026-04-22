@@ -23,6 +23,16 @@ Window {
     property color textColor: "#FF0000"  // 默认红色
     property var gradientStops: []
     property bool useGradient: false
+    property var quickWiringConfig: {
+        // 提供默认值以便测试
+        return {
+            width: 16,
+            height: 8,
+            hSpacing: 0,
+            vSpacing: 0,
+            direction: "wiring_StartLeftBottom_EndRightTop_M_Horizontal"
+        }
+    }
 
     // 主内容容器
     Rectangle {
@@ -111,7 +121,7 @@ Window {
 
                 // ========== 左侧预览区域 ==========
                 Rectangle {
-                    id: previewArea
+                    id: animationPreviewArea
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     color: "#000000"
@@ -124,7 +134,7 @@ Window {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.margins: 10
-                        z: 1
+                        z: 10
                     }
 
                     // 滚动内容的容器
@@ -133,13 +143,87 @@ Window {
                         anchors.fill: parent
                         clip: true
 
+                        // wiringCanvas 作为背景
+                        Canvas {
+                            id: wiringCanvas
+                            anchors.fill: parent
+                            visible: true
+                            z: 0
+
+                            onPaint: {
+                                var ctx = getContext("2d")
+                                ctx.clearRect(0, 0, width, height)
+
+                                if (!quickWiringConfig) {
+                                    return
+                                }
+
+                                var config = quickWiringConfig
+                                var baseWidth = Math.max(1, config.width || 16)
+                                var baseHeight = Math.max(1, config.height || 8)
+                                var hSpacing = Math.max(0, config.hSpacing || 0)
+                                var vSpacing = Math.max(0, config.vSpacing || 0)
+                                var direction = config.direction || "wiring_StartLeftBottom_EndRightTop_M_Horizontal"
+
+                                var hFactor = hSpacing + 1
+                                var vFactor = vSpacing + 1
+                                var widthVal = baseWidth * hFactor
+                                var heightVal = baseHeight * vFactor
+
+                                var cellWidth = (width - 20) / widthVal
+                                var cellHeight = (height - 20) / heightVal
+                                var squareSize = Math.max(2, Math.min(cellWidth, cellHeight) * 0.45)
+
+                                // 黑色背景
+                                ctx.fillStyle = "#000000"
+                                ctx.fillRect(0, 0, width, height)
+
+                                // 绘制网格线
+                                ctx.strokeStyle = "#202020"
+                                ctx.lineWidth = 1
+
+                                // 垂直线
+                                for (var i = 0; i <= widthVal; i++) {
+                                    var x = i * cellWidth
+                                    ctx.beginPath()
+                                    ctx.moveTo(x, 0)
+                                    ctx.lineTo(x, height)
+                                    ctx.stroke()
+                                }
+
+                                // 水平线
+                                for (var j = 0; j <= heightVal; j++) {
+                                    var y = j * cellHeight
+                                    ctx.beginPath()
+                                    ctx.moveTo(0, y)
+                                    ctx.lineTo(width, y)
+                                    ctx.stroke()
+                                }
+
+                                // 绘制白色方块
+                                ctx.fillStyle = "#FFFFFF"
+                                for (j = 0; j < heightVal; j++) {
+                                    for (i = 0; i < widthVal; i++) {
+                                        var squareX = i * cellWidth + cellWidth / 2 - squareSize / 2
+                                        var squareY = j * cellHeight + cellHeight / 2 - squareSize / 2
+                                        ctx.fillRect(squareX, squareY, squareSize, squareSize)
+                                    }
+                                }
+
+                                console.log("wiringCanvas painted:", baseWidth, "x", baseHeight, "cells")
+                            }
+
+                            onVisibleChanged: requestPaint()
+                        }
+
                         // 使用一个可见的Text组件
                         Item {
                             id: textContainer
                             width: textMetrics.width
                             height: Math.max(textMetrics.height, 50)  // 确保最小高度
                             y: (rollingContainer.height - height) / 2
-                            x: previewArea.width
+                            x: animationPreviewArea.width
+                            z: 1  // 确保文字在wiringCanvas之上
 
                             // 单色文字
                             Text {
@@ -153,15 +237,16 @@ Window {
                                 horizontalAlignment: Text.AlignLeft
                                 verticalAlignment: Text.AlignVCenter
                                 visible: !useGradient
+                                z: 2
                             }
 
-                            // 渐变文字 - 使用Canvas绘制渐变文字
+                            // 渐变文字
                             Item {
                                 id: gradientTextContainer
                                 anchors.fill: parent
                                 visible: useGradient
+                                z: 2
 
-                                // 使用Canvas绘制渐变文字
                                 Canvas {
                                     id: gradientCanvas
                                     anchors.fill: parent
@@ -206,41 +291,6 @@ Window {
                                         // 绘制文字
                                         ctx.fillText(animationText.text, 0, textHeight / 2);
                                     }
-
-                                    // 当属性变化时重新绘制
-                                    onWidthChanged: requestPaint();
-                                    onHeightChanged: requestPaint();
-                                }
-
-                                // 当相关属性变化时，重新绘制Canvas
-                                Connections {
-                                    target: animationEditorDialog
-                                    function onUseGradientChanged() { gradientCanvas.requestPaint(); }
-                                }
-
-                                Connections {
-                                    target: animationEditorDialog
-                                    function onGradientStopsChanged() { gradientCanvas.requestPaint(); }
-                                }
-
-                                Connections {
-                                    target: animationEditorDialog
-                                    function onTextColorChanged() { gradientCanvas.requestPaint(); }
-                                }
-
-                                Connections {
-                                    target: animationText
-                                    function onTextChanged() { gradientCanvas.requestPaint(); }
-                                }
-
-                                Connections {
-                                    target: fontNameProperty
-                                    function onValueChanged() { gradientCanvas.requestPaint(); }
-                                }
-
-                                Connections {
-                                    target: fontSizeProperty
-                                    function onValueChanged() { gradientCanvas.requestPaint(); }
                                 }
                             }
                         }
@@ -259,9 +309,9 @@ Window {
                         id: scrollAnimation
                         target: textContainer
                         property: "x"
-                        from: previewArea.width
+                        from: animationPreviewArea.width
                         to: -textContainer.width
-                        duration: (previewArea.width + textContainer.width) / scrollSpeed * 1000
+                        duration: (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000
                         loops: Animation.Infinite
                         running: previewPlaying
                     }
@@ -270,12 +320,12 @@ Window {
                     function updateScrollAnimation() {
                         var wasPlaying = scrollAnimation.running
                         scrollAnimation.stop()
-                        scrollAnimation.from = previewArea.width
+                        scrollAnimation.from = animationPreviewArea.width
                         scrollAnimation.to = -textContainer.width
-                        scrollAnimation.duration = (previewArea.width + textContainer.width) / scrollSpeed * 1000
+                        scrollAnimation.duration = (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000
 
                         if (wasPlaying) {
-                            textContainer.x = previewArea.width
+                            textContainer.x = animationPreviewArea.width
                             scrollAnimation.start()
                         }
                     }
@@ -287,6 +337,7 @@ Window {
                         anchors.right: parent.right
                         height: 40
                         color: "#252526"
+                        z: 5
 
                         RowLayout {
                             anchors.fill: parent
@@ -313,7 +364,7 @@ Window {
                                 onClicked: {
                                     previewPlaying = !previewPlaying
                                     if (previewPlaying) {
-                                        textContainer.x = previewArea.width
+                                        textContainer.x = animationPreviewArea.width
                                         scrollAnimation.start()
                                     } else {
                                         scrollAnimation.stop()
@@ -338,7 +389,7 @@ Window {
                                     Layout.preferredWidth: 100
                                     onValueChanged: {
                                         scrollSpeed = value
-                                        previewArea.updateScrollAnimation()
+                                        animationPreviewArea.updateScrollAnimation()
                                     }
                                 }
                                 Label {
@@ -356,7 +407,7 @@ Window {
                             Text {
                                 text: {
                                     if (textContainer.width > 0) {
-                                        var distance = previewArea.width + textContainer.width
+                                        var distance = animationPreviewArea.width + textContainer.width
                                         var seconds = distance / scrollSpeed
                                         return "滚动时长: " + seconds.toFixed(1) + "秒"
                                     }
@@ -373,30 +424,6 @@ Window {
                             }
                         }
                     }
-
-                    // 监听文字变化
-                    Connections {
-                        target: animationText
-                        function onTextChanged() {
-                            previewArea.updateScrollAnimation()
-                        }
-                    }
-
-                    Connections {
-                        target: fontNameProperty
-                        function onValueChanged() {
-                            previewArea.updateScrollAnimation()
-                        }
-                    }
-
-                    Connections {
-                        target: fontSizeProperty
-                        function onValueChanged() {
-                            previewArea.updateScrollAnimation()
-                        }
-                    }
-
-                    onWidthChanged: previewArea.updateScrollAnimation()
                 }
 
                 // ========== 右侧面板 ==========
@@ -578,7 +605,7 @@ Window {
                                         onClicked: {
                                             previewPlaying = !previewPlaying
                                             if (previewPlaying) {
-                                                textContainer.x = previewArea.width
+                                                textContainer.x = animationPreviewArea.width
                                                 scrollAnimation.start()
                                             } else {
                                                 scrollAnimation.stop()
@@ -598,6 +625,7 @@ Window {
                             ColumnLayout {
                                 width: parent.width
                                 spacing: 5
+
                                 TextField {
                                     id: animationText
                                     text: "请输入文字"
@@ -608,7 +636,7 @@ Window {
                                     }
                                     Layout.fillWidth: true
                                     onTextChanged: {
-                                        previewArea.updateScrollAnimation()
+                                        updateScrollAnimation()
                                     }
                                 }
 
@@ -621,6 +649,10 @@ Window {
                                             value: "是"
                                             fieldType: "combo"
                                             options: ["是", "否"]
+                                            onValueChanged: {
+                                                // 当布线遮罩变化时，重新绘制wiringCanvas
+                                                wiringCanvas.requestPaint()
+                                            }
                                         }
                                         PropertyField {
                                             label: "显示比例"
@@ -661,7 +693,7 @@ Window {
                                             fieldType: "combo"
                                             options: ["宋体", "微软雅黑", "黑体", "楷体"]
                                             onValueChanged: {
-                                                previewArea.updateScrollAnimation()
+                                                updateScrollAnimation()
                                             }
                                         }
                                         PropertyField {
@@ -672,7 +704,7 @@ Window {
                                             from: 1
                                             to: 200
                                             onValueChanged: {
-                                                previewArea.updateScrollAnimation()
+                                                updateScrollAnimation()
                                             }
                                         }
                                         PropertyField {
@@ -822,16 +854,19 @@ Window {
                 color: "#252526"
                 border.color: "#3E3E3E"
                 border.width: 1
+
                 ColumnLayout {
                     anchors.fill: parent
                     spacing: 5
                     anchors.margins: 10
+
                     Text {
                         text: "素材编辑·炫彩文字2"
                         color: "#FFFFFF"
                         font.bold: true
                         font.pixelSize: 12
                     }
+
                     RowLayout {
                         Text {
                             text: "总帧数:80"
@@ -856,6 +891,7 @@ Window {
                             font.pixelSize: 12
                         }
                     }
+
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
@@ -863,15 +899,18 @@ Window {
                         border.color: "#555555"
                         border.width: 1
                         radius: 3
+
                         RowLayout {
                             anchors.fill: parent
                             anchors.margins: 5
                             spacing: 0
+
                             Repeater {
                                 model: 20
                                 Item {
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
+
                                     Rectangle {
                                         width: 1
                                         height: 10
@@ -879,6 +918,7 @@ Window {
                                         anchors.bottom: parent.bottom
                                         anchors.horizontalCenter: parent.horizontalCenter
                                     }
+
                                     Text {
                                         text: index * 5
                                         color: "#999999"
@@ -889,6 +929,7 @@ Window {
                                 }
                             }
                         }
+
                         Rectangle {
                             width: 2
                             height: parent.height
@@ -898,26 +939,67 @@ Window {
                     }
                 }
             }
-        Rectangle{
-            Layout.fillWidth: true
-            Layout.preferredHeight: 100
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: 5
-                anchors.margins: 10
-            Button{
-                id:acceptBtn
-                text: "确定"
-                onClicked: {
 
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 60
+                color: "#252526"
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    spacing: 10
+
+                    Item { Layout.fillWidth: true }
+
+                    Button {
+                        id: cancelBtn
+                        text: "取消"
+                        Layout.preferredWidth: 80
+                        Layout.preferredHeight: 30
+                        background: Rectangle {
+                            color: parent.pressed ? "#666666" : "#333333"
+                            border.color: "#555555"
+                            border.width: 1
+                            radius: 3
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#CCCCCC"
+                            font.pixelSize: 12
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: {
+                            animationEditorDialog.close()
+                        }
+                    }
+
+                    Button {
+                        id: acceptBtn
+                        text: "确定"
+                        Layout.preferredWidth: 80
+                        Layout.preferredHeight: 30
+                        background: Rectangle {
+                            color: parent.pressed ? "#0066CC" : "#007ACC"
+                            border.color: "#0066CC"
+                            border.width: 1
+                            radius: 3
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#FFFFFF"
+                            font.pixelSize: 12
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: {
+                            // 保存设置并关闭
+                            animationEditorDialog.close()
+                        }
+                    }
                 }
             }
-            Button{
-                id:cancerBtn
-                text:"取消"
-            }
-            }
-        }
         }
     }
 
@@ -928,10 +1010,13 @@ Window {
                 animationEditorDialog.x = (parentWindow.width - width) / 2
                 animationEditorDialog.y = (parentWindow.height - height) / 2
             }
-            textContainer.x = previewArea.width
+            textContainer.x = animationPreviewArea.width
             if (previewPlaying) {
                 scrollAnimation.start()
             }
+
+            // 重新绘制wiringCanvas
+            wiringCanvas.requestPaint()
         } else {
             scrollAnimation.stop()
         }
@@ -939,6 +1024,15 @@ Window {
 
     // 确保初始位置正确
     Component.onCompleted: {
-        textContainer.x = previewArea.width
+        textContainer.x = animationPreviewArea.width
+        // 初始绘制wiringCanvas
+        wiringCanvas.requestPaint()
+    }
+
+    // 监听quickWiringConfig变化
+    onQuickWiringConfigChanged: {
+        if (wiringCanvas) {
+            wiringCanvas.requestPaint()
+        }
     }
 }

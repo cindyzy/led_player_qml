@@ -568,7 +568,8 @@ Rectangle {
     // 添加炫彩文字
     function addColorfulText(programIndex, windowIndex) {
         console.log("添加炫彩文字到视窗:", programIndex, windowIndex)
-        animationEditorPopup.show()
+        animationEditorDialog.show()
+        animationEditorDialog.quickWiringConfig=previewArea.quickWiringConfig
     }
 
     // 添加屏幕录制

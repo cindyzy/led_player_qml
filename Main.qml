@@ -45,7 +45,7 @@ ApplicationWindow {
     }
     AnimationEditorDialog
     {
-        id:animationEditorPopup
+        id:animationEditorDialog
     }
 
     Connections {
