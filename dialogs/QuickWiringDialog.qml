@@ -1453,10 +1453,10 @@ Popup {
     onVisibleChanged: {
         if (visible) {
             // 在父窗口居中显示
-            var parentWindow = wiringPopup.parent
+            var parentWindow = wiringDialog.parent
             if (parentWindow) {
-                wiringPopup.x = (parentWindow.width - width) / 2
-                wiringPopup.y = (parentWindow.height - height) / 2
+                wiringDialog.x = (parentWindow.width - width) / 2
+                wiringDialog.y = (parentWindow.height - height) / 2
             }
         }
     }
