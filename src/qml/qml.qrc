@@ -1,10 +1,8 @@
-<!DOCTYPE RCC>
-<RCC version="1.0">
+<RCC>
     <qresource prefix="/">
         <file>Main.qml</file>
         <file>MainLayout.qml</file>
         <file>ThemeManager.qml</file>
-<!--        <file>qmldir</file>-->
         <file>components/MenuButton.qml</file>
         <file>components/PropertyField.qml</file>
         <file>components/PropertyGroup.qml</file>
@@ -26,8 +24,9 @@
         <file>dialogs/HardwareSettingsDialog.qml</file>
         <file>dialogs/NewProjectDialog.qml</file>
         <file>dialogs/NewWiringDialog.qml</file>
-        <!-- 资源文件示例 -->
-<!--        <file>resources/images/icon.png</file>
-        <file>resources/fonts/NotoSansSC-Regular.ttf</file>-->
+        <file>components/animationEditor/PropertySettingsPanel.qml</file>
+        <file>components/animationEditor/MaterialTimelinePanel.qml</file>
+        <file>components/animationEditor/ColorBandEditorPanel.qml</file>
+        <file>components/animationEditor/PlaybackPanel.qml</file>
     </qresource>
 </RCC>

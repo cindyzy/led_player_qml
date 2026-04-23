@@ -1,5 +1,5 @@
 import QtQuick 2.15
-
+//渐变按钮
 Rectangle {
     id: gradientSwatch
     property var gradientSwatchStops: [] // [{color: "#fff", position: 0}, ...]

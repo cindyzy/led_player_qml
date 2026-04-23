@@ -17,6 +17,7 @@ RowLayout {
     Layout.fillWidth: true
     spacing: 8
 
+    signal btnclicked()
     // 标签
     Text {
         text: label
@@ -34,6 +35,7 @@ RowLayout {
             case "combo": return comboFieldComponent
             case "switch": return switchFieldComponent
             case "label": return labelFieldComponent
+            case "button": return buttonFieldComponent
             default: return textFieldComponent
             }
         }
@@ -165,5 +167,18 @@ RowLayout {
                 font.pixelSize: 12
             }
         }
+        Component {
+            id: buttonFieldComponent
+            Button {
+                text: propertyField.decimals > 0 && typeof propertyField.value === "number"
+                      ? propertyField.value.toFixed(propertyField.decimals)
+                      : propertyField.value.toString()
+                height: parent.height
+                font.pixelSize: 12
+                onClicked: btnclicked()
+            }
+        }
+
+
     }
 }

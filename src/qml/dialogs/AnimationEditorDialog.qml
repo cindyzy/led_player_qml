@@ -6,7 +6,7 @@ import QtQuick.Dialogs
 import QtQuick.Shapes
 import QtQuick.Window
 import "../components"
-
+import "../components/animationEditor"
 Window {
     id: animationEditorDialog
     width: 1200
@@ -56,72 +56,6 @@ Window {
     property int charHeightLeds: 16     // 每个字符占用的 LED 行数
     property int spacingCols: 1        // 字符之间的间隔列数
     property var charBitmapCache: ({})  // 缓存字符的点阵数据
-    //实现字符点阵生成函数（简易点阵）
-    // function getCharBitmapDynamic(ledchar, fontSize, fontFamily) {
-    //     var cacheKey = ledchar + "_" + fontFamily + "_" + fontSize + "_" + charWidthLeds + "x" + charHeightLeds;
-    //     if (charBitmapCache[cacheKey]) {
-    //         return charBitmapCache[cacheKey];
-    //     }
-
-    //     // 画布大小：确保每个 LED 单元格至少对应 10x10 像素，提高采样精度
-    //     var canvasSize = Math.max(fontSize * 2, 240);
-    //     offscreenCharCanvas.width = canvasSize;
-    //     offscreenCharCanvas.height = canvasSize;
-
-    //     var ctx = offscreenCharCanvas.getContext('2d');
-    //     if (!ctx) {
-    //         console.warn("Failed to get 2d context");
-    //         return [];
-    //     }
-
-    //     // 黑色背景
-    //     ctx.fillStyle = "#000000";
-    //     ctx.fillRect(0, 0, canvasSize, canvasSize);
-    //     // 白色文字
-    //     ctx.fillStyle = "#FFFFFF";
-    //     ctx.font = fontSize + "px " + fontFamily;
-    //     ctx.textAlign = "center";
-    //     ctx.textBaseline = "middle";
-    //     ctx.fillText(ledchar, canvasSize / 2, canvasSize / 2);
-
-    //     var imageData = ctx.getImageData(0, 0, canvasSize, canvasSize);
-    //     var data = imageData.data;
-
-    //     var cellW = canvasSize / charWidthLeds;
-    //     var cellH = canvasSize / charHeightLeds;
-
-    //     var bitmap = [];
-    //     for (var row = 0; row < charHeightLeds; row++) {
-    //         var rowArray = [];
-    //         for (var col = 0; col < charWidthLeds; col++) {
-    //             var startX = col * cellW;
-    //             var endX = (col + 1) * cellW;
-    //             var startY = row * cellH;
-    //             var endY = (row + 1) * cellH;
-
-    //             var totalBrightness = 0;
-    //             var pixelCount = 0;
-    //             for (var py = Math.floor(startY); py < Math.ceil(endY); py++) {
-    //                 for (var px = Math.floor(startX); px < Math.ceil(endX); px++) {
-    //                     if (px >= 0 && px < canvasSize && py >= 0 && py < canvasSize) {
-    //                         var idx = (py * canvasSize + px) * 4;
-    //                         totalBrightness += data[idx];
-    //                         pixelCount++;
-    //                     }
-    //                 }
-    //             }
-    //             var avgBrightness = totalBrightness / pixelCount;
-    //             // 阈值 30 适用于大多数情况
-    //             var isLit = avgBrightness > 30;
-    //             rowArray.push(isLit ? 1 : 0);
-    //         }
-    //         bitmap.push(rowArray);
-    //     }
-
-    //     charBitmapCache[cacheKey] = bitmap;
-    //     console.log("bitmaps:"+cacheKey + bitmap)
-    //     return bitmap;
-    // }
 
     function getCharBitmapDynamic(ledchar, fontSize, fontFamily) {
         const width = 16;   // 点阵宽度
@@ -293,33 +227,6 @@ Window {
     }
 
     // 计算LED颜色 - 修复版本
-    // function calculateLedColor(col, row) {
-    //     // 计算LED方块中心在预览区域的坐标
-    //     var ledCenterX = gridOffsetX + col * gridCellWidth + gridCellWidth / 2;
-
-    //     // 计算LED中心在文字中的相对位置
-    //     // 文字从右向左移动，所以我们需要计算LED中心对应文字中的哪个位置
-    //     var textProgress = 1.0;
-
-    //     if (textContainer.width > 0) {
-    //         // 计算LED中心相对于文字容器起始位置的距离
-    //         var distanceFromTextStart = ledCenterX - textContainer.x;
-
-    //         // 如果LED在文字范围内
-    //         if (distanceFromTextStart >= 0 && distanceFromTextStart <= textContainer.width) {
-    //             // 计算在文字中的相对位置
-    //             textProgress = distanceFromTextStart / textContainer.width;
-
-    //             if (useGradient) {
-    //                 return getGradientColor(textProgress);
-    //             } else {
-    //                 return textColor;
-    //             }
-    //         }
-    //     }
-
-    //     return "#202020";  // 不在文字范围内，返回暗灰色
-    // }
     function calculateLedColor(col, row) {
         var text = animationText.text;
         if (text.length === 0) return "#202020";
@@ -720,449 +627,255 @@ Window {
                     ColumnLayout {
                         anchors.fill: parent
                         spacing: 0
-
-                        PropertyGroup {
+                        // 色带编辑面板 (右中) - 使用修复后的版本
+                        ColorBandEditorPanel {
+                            id: colorBandPanel
+                            Layout.row: 1
+                            Layout.column: 1
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 300
-                            title: "色带编辑"
-                            expanded: true
+                            Layout.preferredHeight: 250
 
-                            ColumnLayout {
-                                spacing: 10
+                            // 绑定到当前动画的色带相关属性
+                            gradients: currentAnimation.gradients || []
+                            currentGradientIndex: 0
+                            useGradient: currentAnimation.colorSettings ? currentAnimation.colorSettings.useGradient : true
+                            textColor: currentAnimation.colorSettings ? currentAnimation.colorSettings.textColor : "#FF0000"
+                            previewPlaying: animationEditorDialog.previewPlaying
+                            selectedTemplate: currentAnimation.colorSettings ? currentAnimation.colorSettings.selectedTemplate : "模板1"
+                            gradientStops: currentAnimation.colorSettings ? currentAnimation.colorSettings.gradientStops : []
 
-                                ColumnLayout {
-                                    spacing: 5
-                                    Text { text: "内置色带"; color: "#CCCCCC"; font.pixelSize: 12 }
-                                    RowLayout {
-                                        spacing: 5
-                                        GradientSwatch {
-                                            gradientSwatchStops: [
-                                                {color: "#FF0000", position: 0.0},
-                                                {color: "#FFFF00", position: 0.5},
-                                                {color: "#00FF00", position: 1.0}
-                                            ]
-                                            onSwatchClicked: {
-                                                useGradient = true
-                                                gradientStops = gradientSwatchStops
-                                                console.log("应用渐变:", gradientSwatchStops)
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        GradientSwatch {
-                                            gradientSwatchStops: [
-                                                {color: "#0000FF", position: 0.0},
-                                                {color: "#00FFFF", position: 0.5},
-                                                {color: "#FFFFFF", position: 1.0}
-                                            ]
-                                            onSwatchClicked: {
-                                                useGradient = true
-                                                gradientStops = gradientSwatchStops
-                                                console.log("应用渐变:", gradientSwatchStops)
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        GradientSwatch {
-                                            gradientSwatchStops: [
-                                                {color: "#FF00FF", position: 0.0},
-                                                {color: "#FFFF00", position: 0.5},
-                                                {color: "#00FFFF", position: 1.0}
-                                            ]
-                                            onSwatchClicked: {
-                                                useGradient = true
-                                                gradientStops = gradientSwatchStops
-                                                console.log("应用渐变:", gradientSwatchStops)
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        GradientSwatch {
-                                            gradientSwatchStops: [
-                                                {color: "#FF0000", position: 0.0},
-                                                {color: "#FFFFFF", position: 1.0}
-                                            ]
-                                            onSwatchClicked: {
-                                                useGradient = true
-                                                gradientStops = gradientSwatchStops
-                                                console.log("应用渐变:", gradientSwatchStops)
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        GradientSwatch {
-                                            gradientSwatchStops: [
-                                                {color: "#000000", position: 0.0},
-                                                {color: "#00FF00", position: 0.5},
-                                                {color: "#0000FF", position: 1.0}
-                                            ]
-                                            onSwatchClicked: {
-                                                useGradient = true
-                                                gradientStops = gradientSwatchStops
-                                                console.log("应用渐变:", gradientSwatchStops)
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                    }
-                                }
+                            // 信号处理
+                            onGradientSelected: function(index, gradient) {
+                                console.log("色带选择: 索引=" + index + ", 渐变=" + JSON.stringify(gradient));
 
-                                ColumnLayout {
-                                    spacing: 5
-                                    Text { text: "单色色带"; color: "#CCCCCC"; font.pixelSize: 12 }
-                                    RowLayout {
-                                        spacing: 5
-                                        ColorSwatch {
-                                            swatchColor: "#FF0000"
-                                            onSwatchClicked: {
-                                                useGradient = false
-                                                textColor = swatchColor
-                                                console.log("应用单色:", textColor)
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        ColorSwatch {
-                                            swatchColor: "#FF9900"
-                                            onSwatchClicked: {
-                                                useGradient = false
-                                                textColor = swatchColor
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        ColorSwatch {
-                                            swatchColor: "#FFFF00"
-                                            onSwatchClicked: {
-                                                useGradient = false
-                                                textColor = swatchColor
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        ColorSwatch {
-                                            swatchColor: "#00FF00"
-                                            onSwatchClicked: {
-                                                useGradient = false
-                                                textColor = swatchColor
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        ColorSwatch {
-                                            swatchColor: "#0000FF"
-                                            onSwatchClicked: {
-                                                useGradient = false
-                                                textColor = swatchColor
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                    }
-                                }
+                                // 更新当前选中的渐变索引
+                                currentGradientIndex = index;
 
-                                PropertyField {
-                                    label: "外置模板"
-                                    value: "模板1"
-                                    fieldType: "combo"
-                                    options: ["模板1", "模板2", "模板3"]
-                                }
+                                // 如果选择了渐变，则更新颜色设置
+                                if (gradient && currentAnimation.colorSettings) {
+                                    currentAnimation.colorSettings.useGradient = true;
+                                    currentAnimation.colorSettings.gradientStops = gradient;
+                                    colorBandPanel.useGradient = true;
+                                    colorBandPanel.gradientStops = gradient;
 
-                                ColumnLayout {
-                                    spacing: 5
-                                    Text { text: "已选色带"; color: "#CCCCCC"; font.pixelSize: 12 }
-                                    RowLayout {
-                                        spacing: 5
-                                        Repeater {
-                                            model: 5
-                                            Rectangle {
-                                                width: 30
-                                                height: 20
-                                                color: ["#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF"][index]
-                                                border.color: "#444444"
-                                            }
-                                        }
-                                    }
-                                }
+                                    // 发出信号通知渐变被应用
+                                    gradientApplied(gradient);
 
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    Item { Layout.fillWidth: true }
-                                    Button {
-                                        text: previewPlaying ? "暂停" : "预览"
-                                        Layout.preferredWidth: 60
-                                        Layout.preferredHeight: 25
-                                        background: Rectangle {
-                                            color: parent.pressed ? "#666666" : "#333333"
-                                            border.color: "#555555"
-                                            border.width: 1
-                                            radius: 3
-                                        }
-                                        contentItem: Text {
-                                            text: parent.text
-                                            color: "#CCCCCC"
-                                            font.pixelSize: 12
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        onClicked: {
-                                            previewPlaying = !previewPlaying
-                                            if (previewPlaying) {
-                                                calculateGridParameters();
-                                                textContainer.x = textContainerStartX;
-                                                updateLEDTimer.start();
-                                            } else {
-                                                updateLEDTimer.stop();
-                                            }
-                                        }
-                                    }
                                 }
                             }
-                        }
 
-                        // 属性设置
-                        ScrollView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                            onColorSelected: function(color) {
+                                console.log("颜色选择: " + color);
 
-                            ColumnLayout {
-                                width: parent.width
-                                spacing: 5
+                                // 更新当前动画的颜色设置
+                                if (currentAnimation.colorSettings) {
+                                    currentAnimation.colorSettings.useGradient = false;
+                                    currentAnimation.colorSettings.textColor = color;
+                                    colorBandPanel.useGradient = false;
+                                    colorBandPanel.textColor = color;
 
-                                TextField {
-                                    id: animationText
-                                    text: "LED文字效果"
-                                    color: "white"
-                                    background: Rectangle {
-                                        color: "#333333"
-                                        border.color: "#555555"
-                                    }
-                                    Layout.fillWidth: true
-                                    onTextChanged: {
-                                        // 重新计算文字容器宽度
-                                        var totalCols = animationText.text.length * charWidthLeds + (animationText.text.length - 1) * spacingCols;
-                                        textContainer.width = totalCols * gridCellWidth;
-                                        wiringCanvas.requestPaint();
-                                    }
+                                    // 发出颜色选择信号
+                                    colorSelected(color);
                                 }
 
-                                PropertyGroup {
-                                    title: "LED网格设置"
-                                    expanded: true
-                                    ColumnLayout {
-                                        PropertyField {
-                                            label: "网格宽度"
-                                            value: quickWiringConfig.width
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 64
-                                            onValueChanged: {
-                                                quickWiringConfig.width = value
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        PropertyField {
-                                            label: "网格高度"
-                                            value: quickWiringConfig.height
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 32
-                                            onValueChanged: {
-                                                quickWiringConfig.height = value
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        PropertyField {
-                                            label: "LED大小"
-                                            value: "70%"
-                                            fieldType: "combo"
-                                            options: ["50%", "60%", "70%", "80%", "90%"]
-                                        }
-                                        PropertyField {
-                                            label: "亮度"
-                                            value: "高"
-                                            fieldType: "combo"
-                                            options: ["低", "中", "高", "极高"]
-                                        }
-                                    }
-                                }
-
-                                PropertyGroup {
-                                    title: "基本属性"
-                                    expanded: true
-                                    ColumnLayout {
-                                        Text {
-                                            text: "字体设置"
-                                            color: "#D4D4D4"
-                                            font.bold: true
-                                            font.pixelSize: 12
-                                        }
-                                        RowLayout {
-                                            Text {
-                                                text: "宋体"
-                                                color: "#CCCCCC"
-                                                font.pixelSize: 12
-                                                Layout.preferredWidth: 100
-                                            }
-                                            Text {
-                                                text: "更多"
-                                                color: "#007ACC"
-                                                font.pixelSize: 12
-                                                Layout.fillWidth: true
-                                            }
-                                        }
-                                        PropertyField {
-                                            id: fontNameProperty
-                                            label: "字体名称"
-                                            value: "宋体"
-                                            fieldType: "combo"
-                                            options: ["宋体", "微软雅黑", "黑体", "楷体"]
-                                            onValueChanged: {
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        PropertyField {
-                                            id: fontSizeProperty
-                                            label: "字体大小"
-                                            value: 54
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 200
-                                            onValueChanged: {
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        PropertyField {
-                                            label: "素材名称"
-                                            value: "LED文字效果"
-                                            fieldType: "text"
-                                        }
-                                        PropertyField {
-                                            label: "起点X坐标"
-                                            value: 0
-                                            fieldType: "spin"
-                                            from: 0
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "起点Y坐标"
-                                            value: 0
-                                            fieldType: "spin"
-                                            from: 0
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "素材宽度"
-                                            value: 60
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "素材高度"
-                                            value: 270
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "帧数"
-                                            value: 80
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "素材起始帧"
-                                            value: 1
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "素材结束帧"
-                                            value: 80
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "入场帧"
-                                            value: 1
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "出场帧"
-                                            value: 80
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 9999
-                                        }
-                                        PropertyField {
-                                            label: "重复次数"
-                                            value: 1
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 9999
-                                        }
-                                        RowLayout {
-                                            Text {
-                                                text: "410 帧"
-                                                color: "#CCCCCC"
-                                                font.pixelSize: 12
-                                                Layout.preferredWidth: 100
-                                            }
-                                            Button {
-                                                text: "追加"
-                                                Layout.fillWidth: true
-                                                background: Rectangle {
-                                                    color: parent.pressed ? "#666666" : "#333333"
-                                                    border.color: "#555555"
-                                                    border.width: 1
-                                                    radius: 3
-                                                }
-                                            }
-                                        }
-                                        Button {
-                                            text: "生成LED数据"
-                                            Layout.fillWidth: true
-                                            background: Rectangle {
-                                                color: parent.pressed ? "#666666" : "#333333"
-                                                border.color: "#555555"
-                                                border.width: 1
-                                                radius: 3
-                                            }
-                                            onClicked: {
-                                                console.log("开始生成LED数据...")
-                                                wiringCanvas.requestPaint()
-                                            }
-                                        }
-                                        Button {
-                                            text: "导出效果"
-                                            Layout.fillWidth: true
-                                            background: Rectangle {
-                                                color: parent.pressed ? "#666666" : "#333333"
-                                                border.color: "#555555"
-                                                border.width: 1
-                                                radius: 3
-                                            }
-                                        }
-                                        PropertyField {
-                                            label: "混合类型"
-                                            value: "黑色透明"
-                                            fieldType: "combo"
-                                            options: ["黑色透明", "正常", "叠加", "滤色"]
-                                        }
-                                        PropertyField {
-                                            label: "镜像方式"
-                                            value: "复制"
-                                            fieldType: "combo"
-                                            options: ["复制", "镜像", "不镜像"]
-                                        }
-                                        PropertyField {
-                                            label: "横向分区数"
-                                            value: 1
-                                            fieldType: "spin"
-                                            from: 1
-                                            to: 10
-                                        }
-                                    }
-                                }
+                                // 更新画布显示
+                                // updateWiringCanvas();
+                                wiringCanvas.requestPaint()
                             }
+
+                            onTemplateChanged: function(templateName) {
+                                console.log("模板变更: " + templateName);
+
+                                // 更新当前动画的模板设置
+                                if (currentAnimation.colorSettings) {
+                                    currentAnimation.colorSettings.selectedTemplate = templateName;
+                                }
+
+                                // 发出模板变更信号
+                                templateChanged(templateName);
+
+                                // 根据模板加载预设
+                                // loadTemplate(templateName);
+                            }
+
+
+
+                            onCanvasRepaintRequested: function() {
+                                console.log("色带面板请求重绘画布");
+                                updateWiringCanvas();
+                            }
+
+
+                            onGradientApplied: function(gradient) {
+                                            console.log("渐变应用: " + JSON.stringify(gradient));
+
+                                            // 将渐变添加到当前动画的渐变列表中
+                                            // if (!currentAnimation.gradients) {
+                                            //     currentAnimation.gradients = [];
+                                            // }
+
+                                            // // 检查是否已存在相同的渐变
+                                            // var exists = false;
+                                            // for (var i = 0; i < currentAnimation.gradients.length; i++) {
+                                            //     if (JSON.stringify(currentAnimation.gradients[i].stops) === JSON.stringify(gradient)) {
+                                            //         exists = true;
+                                            //         break;
+                                            //     }
+                                            // }
+
+                                            // if (!exists) {
+                                            //     // 添加新渐变
+                                            //     var newGradient = {
+                                            //         "id": Date.now(),
+                                            //         "name": "自定义渐变" + (currentAnimation.gradients.length + 1),
+                                            //         "stops": gradient
+                                            //     };
+                                            //     currentAnimation.gradients.push(newGradient);
+
+                                            //     // 更新当前选中的渐变索引
+                                            //     currentGradientIndex = currentAnimation.gradients.length - 1;
+                                            // }
+
+                                            // // 更新颜色设置
+                                            // if (currentAnimation.colorSettings) {
+                                            //     currentAnimation.colorSettings.useGradient = true;
+                                            //     currentAnimation.colorSettings.gradientStops = gradient;
+                                            // }
+
+                                            // 发出渐变应用信号
+                                            gradientApplied(gradient);
+
+                                            // 更新画布显示
+                                            wiringCanvas.requestPaint()
+                                        }
                         }
+
+
+
+                        // 属性设置面板 (右上) - 这是重点区域
+                                    PropertySettingsPanel {
+                                        id: propertyPanel
+                                        Layout.row: 0
+                                        Layout.column: 1
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 350
+
+                                        // 绑定到当前动画的文本属性
+                                        currentItemProperties: currentAnimation.textProperties || {}
+                                        animationParameters: currentAnimation.properties || {}
+
+                                        // 绑定到快速布线配置
+                                        quickWiringConfig: {
+                                            "width": currentAnimation.textProperties ? currentAnimation.textProperties.gridWidth || 16 : 16,
+                                            "height": currentAnimation.textProperties ? currentAnimation.textProperties.gridHeight || 8 : 8
+                                        }
+
+                                        // 属性变更处理
+                                        onPropertyChanged: function(name, value) {
+                                            console.log("属性变更: " + name + " = " + value);
+
+                                            // 更新当前动画的文本属性
+                                            if (currentAnimation.textProperties) {
+                                                currentAnimation.textProperties[name] = value;
+                                            }
+
+                                            // 如果当前在时间轴上选中了项目，也更新该项目的属性
+                                            if (timelinePanel.selectedItem) {
+                                                timelinePanel.selectedItem.properties[name] = value;
+                                            }
+
+                                            // 发出全局属性变更信号
+                                            propertyValueChanged(name, value);
+
+                                            // 如果是网格相关属性，更新画布
+                                            if (name === "gridWidth" || name === "gridHeight" ||
+                                                name === "fontName" || name === "fontSize") {
+                                                updateWiringCanvas();
+                                            }
+
+                                            // 如果是帧数相关属性，重新计算总帧数
+                                            if (name === "startFrame" || name === "endFrame") {
+                                                var totalFrames = calculateTotalFrames();
+                                                console.log("更新总帧数: " + totalFrames + " 帧");
+                                            }
+                                        }
+
+                                        // 文本内容变更处理
+                                        onTextChanged: function(newText) {
+                                            console.log("文本内容变更: " + newText);
+
+                                            // 更新动画属性
+                                            if (currentAnimation.textProperties) {
+                                                currentAnimation.textProperties.text = newText;
+                                            }
+
+                                            // 发出文本变更信号
+                                            textContentChanged(newText);
+
+                                            // 重新计算容器宽度
+                                            var newWidth = updateTextContainerWidth(newText);
+                                            console.log("新宽度: " + newWidth);
+
+                                            // 更新画布
+                                            updateWiringCanvas();
+
+                                            // 如果时间轴上有选中的项目，也更新其文本
+                                            if (timelinePanel.selectedItem) {
+                                                timelinePanel.selectedItem.properties.text = newText;
+                                                timelinePanel.selectedItem.name = newText.substring(0, 20) + "...";
+                                            }
+                                        }
+
+                                        // 生成LED数据处理
+                                        onGenerateLedData: function() {
+                                            console.log("生成LED数据请求");
+
+                                            // 收集所有必要的参数
+                                            var params = {
+                                                "text": currentAnimation.textProperties.text || "",
+                                                "gridWidth": currentAnimation.textProperties.gridWidth || 16,
+                                                "gridHeight": currentAnimation.textProperties.gridHeight || 8,
+                                                "fontName": currentAnimation.textProperties.fontName || "宋体",
+                                                "fontSize": currentAnimation.textProperties.fontSize || 54,
+                                                "animationName": currentAnimation.properties.name || "未命名"
+                                            };
+
+                                            // 发出生成LED数据信号
+                                            generateLedDataRequested();
+
+                                            // 显示生成进度
+                                            generateProgressDialog.open();
+
+                                            // 模拟生成过程
+                                            generateTimer.start();
+                                        }
+
+                                        // 导出效果处理
+                                        onExportEffect: function() {
+                                            console.log("导出效果请求");
+
+                                            // 准备导出数据
+                                            var exportData = {
+                                                "animation": currentAnimation,
+                                                "timestamp": new Date().toISOString(),
+                                                "version": "1.0"
+                                            };
+
+                                            // 发出导出信号
+                                            exportEffectRequested();
+
+                                            // 显示导出对话框
+                                            exportDialog.open();
+                                        }
+
+                                        // 画布重绘请求处理
+                                        onCanvasRepaintRequested: function() {
+                                            console.log("画布重绘请求");
+                                            updateWiringCanvas();
+                                        }
+                                    }
+
+
                     }
                 }
             }
@@ -1327,7 +1040,7 @@ Window {
             }
 
             // 使用自定义控件
-            TimeLineControl {
+            MaterialTimelinePanel {
                 id: timeline
                 Layout.fillWidth: true
                 Layout.preferredHeight: 100
