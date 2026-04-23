@@ -19,7 +19,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # 添加可执行目标
-add_executable(LedPlayer)
+add_executable(LedPlayer
+    src/utils/charbitmapgenerator.h
+    src/utils/charbitmapgenerator.cpp)
 
 # 设置目标属性
 set_target_properties(LedPlayer PROPERTIES
@@ -31,6 +33,7 @@ set_target_properties(LedPlayer PROPERTIES
 target_sources(LedPlayer PRIVATE
     src/app/main.cpp
     src/qml/qml.qrc
+
 )
 
 # 链接Qt库

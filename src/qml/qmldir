@@ -1,0 +1,31 @@
+module LedPlayer
+Main 1.0 Main.qml
+MainLayout 1.0 MainLayout.qml
+ThemeManager 1.0 ThemeManager.qml
+
+# Components
+MenuButton 1.0 components/MenuButton.qml
+PropertyField 1.0 components/PropertyField.qml
+PropertyGroup 1.0 components/PropertyGroup.qml
+SettingGroup 1.0 components/SettingGroup.qml
+TreeItem 1.0 components/TreeItem.qml
+WiringButton 1.0 components/WiringButton.qml
+ImgButton 1.0 components/ImgButton.qml
+ColorSwatch 1.0 components/ColorSwatch.qml
+GradientSwatch 1.0 components/GradientSwatch.qml
+TimeLineControl 1.0 components/TimeLineControl.qml
+
+# Views
+MenuBarArea 1.0 views/MenuBarArea.qml
+PlaybackControlBar 1.0 views/PlaybackControlBar.qml
+PlaylistPanel 1.0 views/PlaylistPanel.qml
+PropertyPanel 1.0 views/PropertyPanel.qml
+StatusBarArea 1.0 views/StatusBarArea.qml
+VideoPreviewArea 1.0 views/VideoPreviewArea.qml
+
+# Dialogs
+QuickWiringDialog 1.0 dialogs/QuickWiringDialog.qml
+AnimationEditorDialog 1.0 dialogs/AnimationEditorDialog.qml
+HardwareSettingsDialog 1.0 dialogs/HardwareSettingsDialog.qml
+NewProjectDialog 1.0 dialogs/NewProjectDialog.qml
+NewWiringDialog 1.0 dialogs/NewWiringDialog.qml

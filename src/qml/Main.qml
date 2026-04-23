@@ -5,6 +5,8 @@ import QtQuick.Window
 import "."
 import "views"
 import "dialogs"
+import "utils"
+
 ApplicationWindow {
     id: mainWindow
     width: 1400
@@ -15,6 +17,8 @@ ApplicationWindow {
     minimumHeight: 768
     menuBar: MenuBarArea{
     }
+
+
     // 应用图标
     // icon.source: "qrc:/icons/app-icon.png"
 
@@ -47,7 +51,12 @@ ApplicationWindow {
     {
         id:animationEditorDialog
     }
+    // CharBitmapGenerator
+    // {
+    //     id:charBitmapGenerator
 
+    // }
+    property var charGenerator: charBitmapGenerator
     Connections {
         target: quickWiringDialog
         function onQuickWiringConfirmed(config) {

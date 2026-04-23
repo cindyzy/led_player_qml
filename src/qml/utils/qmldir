@@ -1,0 +1,3 @@
+// src/qml/utils/qmldir
+module LedPlayer.Utils
+singleton CharBitmapGenerator 1.0 charBitmapGenerator.qml

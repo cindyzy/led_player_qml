@@ -28,5 +28,7 @@
         <file>components/animationEditor/MaterialTimelinePanel.qml</file>
         <file>components/animationEditor/ColorBandEditorPanel.qml</file>
         <file>components/animationEditor/PlaybackPanel.qml</file>
+        <file>utils/CharBitmapGenerator.qml</file>
+        <file>qmldir</file>
     </qresource>
 </RCC>
