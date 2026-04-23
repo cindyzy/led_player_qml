@@ -216,8 +216,8 @@ Rectangle {
                             label: "播放时长(秒)"
                             value: 4.00
                             fieldType: "spin"
-                            from: 0.0
-                            to: 9999.99
+                            from: 0
+                            to: 9999
                             stepSize: 0.01
                             // decimals: 2
                         }
@@ -505,8 +505,8 @@ Rectangle {
                             label: "播放时长(秒)"
                             value: 4.00
                             fieldType: "spin"
-                            from: 0.0
-                            to: 9999.99
+                            from: 0
+                            to: 9999
                             stepSize: 0.01
                             decimals: 2
                         }

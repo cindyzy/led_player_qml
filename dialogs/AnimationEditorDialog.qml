@@ -51,7 +51,51 @@ Window {
     // 文字容器位置
     property real textContainerStartX: 0
     property real textContainerEndX: 0
+    //字符
+    property int charWidthLeds: 5      // 每个字符占用的 LED 列数
+    property int charHeightLeds: 5     // 每个字符占用的 LED 行数
+    property int spacingCols: 1        // 字符之间的间隔列数
+    property var charBitmapCache: ({})  // 缓存字符的点阵数据
+    //实现字符点阵生成函数（简易点阵）
 
+    function getCharBitmap(ledchar) {
+        var bitmaps = {
+            'L': [
+                [1,0,0,0,0],
+                [1,0,0,0,0],
+                [1,0,0,0,0],
+                [1,0,0,0,0],
+                [1,1,1,1,1]
+            ],
+            'E': [
+                [1,1,1,1,1],
+                [1,0,0,0,0],
+                [1,1,1,1,1],
+                [1,0,0,0,0],
+                [1,1,1,1,1]
+            ],
+            'D': [
+                [1,1,1,0,0],
+                [1,0,0,1,0],
+                [1,0,0,0,1],
+                [1,0,0,1,0],
+                [1,1,1,0,0]
+            ]
+        };
+        if (!bitmaps[ledchar]) {
+            // 默认生成一个边框点阵
+            var defaultBitmap = [];
+            for (var i = 0; i < charHeightLeds; i++) {
+                var row = [];
+                for (var j = 0; j < charWidthLeds; j++) {
+                    row.push((i === 0 || i === charHeightLeds-1 || j === 0 || j === charWidthLeds-1) ? 1 : 0);
+                }
+                defaultBitmap.push(row);
+            }
+            return defaultBitmap;
+        }
+        return bitmaps[ledchar];
+    }
     // 计算网格参数
     function calculateGridParameters() {
         if (!quickWiringConfig) return;
@@ -90,14 +134,14 @@ Window {
         // 计算文字容器的起始和结束位置
         textContainerStartX = animationPreviewArea.width;
         textContainerEndX = -textContainer.width;
-        console.log("=== 位置计算 ===");
+        // 计算文字容器宽度（总列数 * 单元格宽度）
+        var totalCols = animationText.text.length * charWidthLeds + (animationText.text.length - 1) * spacingCols;
+        textContainer.width = totalCols * gridCellWidth;
         updateTimerInterval();
             // 重置位置
             if (!previewPlaying) {
                 textContainer.x = textContainerStartX;
             }
-            // console.log("textContainer.width:", textContainer.width);
-            // console.log("animationPreviewArea.width:", animationPreviewArea.width);
     }
 
     // 计算渐变颜色
@@ -140,32 +184,86 @@ Window {
     }
 
     // 计算LED颜色 - 修复版本
+    // function calculateLedColor(col, row) {
+    //     // 计算LED方块中心在预览区域的坐标
+    //     var ledCenterX = gridOffsetX + col * gridCellWidth + gridCellWidth / 2;
+
+    //     // 计算LED中心在文字中的相对位置
+    //     // 文字从右向左移动，所以我们需要计算LED中心对应文字中的哪个位置
+    //     var textProgress = 1.0;
+
+    //     if (textContainer.width > 0) {
+    //         // 计算LED中心相对于文字容器起始位置的距离
+    //         var distanceFromTextStart = ledCenterX - textContainer.x;
+
+    //         // 如果LED在文字范围内
+    //         if (distanceFromTextStart >= 0 && distanceFromTextStart <= textContainer.width) {
+    //             // 计算在文字中的相对位置
+    //             textProgress = distanceFromTextStart / textContainer.width;
+
+    //             if (useGradient) {
+    //                 return getGradientColor(textProgress);
+    //             } else {
+    //                 return textColor;
+    //             }
+    //         }
+    //     }
+
+    //     return "#202020";  // 不在文字范围内，返回暗灰色
+    // }
     function calculateLedColor(col, row) {
-        // 计算LED方块中心在预览区域的坐标
-        var ledCenterX = gridOffsetX + col * gridCellWidth + gridCellWidth / 2;
+        var text = animationText.text;
+        if (text.length === 0) return "#202020";
 
-        // 计算LED中心在文字中的相对位置
-        // 文字从右向左移动，所以我们需要计算LED中心对应文字中的哪个位置
-        var textProgress = 1.0;
+        // 计算每个字符块占用的总列数（字符点阵列 + 间隔列）
+        var charBlockCols = charWidthLeds + spacingCols;
+        // 计算整个文字块在 LED 网格上占用的总列数
+        // 最后一个字符后面不加间隔列
+        var totalTextCols = text.length * charWidthLeds + (text.length - 1) * spacingCols;
 
-        if (textContainer.width > 0) {
-            // 计算LED中心相对于文字容器起始位置的距离
-            var distanceFromTextStart = ledCenterX - textContainer.x;
+        // 基于滚动偏移计算当前 LED 列在文字块中的绝对列索引
+        var offsetCols = Math.floor(textContainer.x / gridCellWidth);
+        var absoluteCol = col - offsetCols;
 
-            // 如果LED在文字范围内
-            if (distanceFromTextStart >= 0 && distanceFromTextStart <= textContainer.width) {
-                // 计算在文字中的相对位置
-                textProgress = distanceFromTextStart / textContainer.width;
+        // 检查是否在文字块范围内
+        if (absoluteCol >= 0 && absoluteCol < totalTextCols) {
+            // 确定字符索引和字符内的本地列
+            var charIndex = 0;
+            var localCol = 0;
+            if (absoluteCol < (text.length - 1) * charBlockCols) {
+                // 非最后一个字符区域
+                charIndex = Math.floor(absoluteCol / charBlockCols);
+                localCol = absoluteCol % charBlockCols;
+                if (localCol >= charWidthLeds) {
+                    // 位于间隔列，不点亮
+                    return "#202020";
+                }
+            } else {
+                // 最后一个字符区域（无尾部间隔）
+                var lastBlockStart = (text.length - 1) * charBlockCols;
+                charIndex = text.length - 1;
+                localCol = absoluteCol - lastBlockStart;
+                if (localCol >= charWidthLeds) {
+                    return "#202020";
+                }
+            }
 
-                if (useGradient) {
-                    return getGradientColor(textProgress);
-                } else {
-                    return textColor;
+            // 垂直方向：如果 LED 行超出字符高度，则不点亮
+            if (row >= 0 && row < charHeightLeds) {
+                var ch = text.charAt(charIndex);
+                var bitmap = getCharBitmap(ch);
+                if (bitmap && bitmap[row] && bitmap[row][localCol] === 1) {
+                    // 根据字符位置计算颜色渐变（可选）
+                    var progress = charIndex / (text.length - 1);
+                    if (useGradient) {
+                        return getGradientColor(progress);
+                    } else {
+                        return textColor;
+                    }
                 }
             }
         }
-
-        return "#202020";  // 不在文字范围内，返回暗灰色
+        return "#202020";
     }
     // 动态调整 Timer 间隔以实现 scrollSpeed 控制
     function updateTimerInterval() {
@@ -759,8 +857,11 @@ Window {
                                     }
                                     Layout.fillWidth: true
                                     onTextChanged: {
-                                        updateScrollAnimation()
-                                        wiringCanvas.requestPaint()
+                                        // 重新计算文字容器宽度
+                                        var totalCols = animationText.text.length * charWidthLeds + (animationText.text.length - 1) * spacingCols;
+                                        textContainer.width = totalCols * gridCellWidth;
+                                        updateScrollAnimation();
+                                        wiringCanvas.requestPaint();
                                     }
                                 }
 
@@ -1031,9 +1132,9 @@ Window {
                             if (previewPlaying) {
                                 calculateGridParameters();
                                 textContainer.x = textContainerStartX;
-                                scrollAnimation.start();
+                                updateLEDTimer.start();
                             } else {
-                                scrollAnimation.stop();
+                                updateLEDTimer.stop();
                             }
                         }
                     }

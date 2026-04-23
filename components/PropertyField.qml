@@ -9,8 +9,8 @@ RowLayout {
     property var value
     property string fieldType: "text"  // text, spin, combo, switch, label
     property var options: []
-    property double from: 0
-    property double to: 100
+    property int from: 0
+    property int to: 100
     property real stepSize: 1          // 新增：步进值
     property int decimals: 0           // 新增：小数位数
 
