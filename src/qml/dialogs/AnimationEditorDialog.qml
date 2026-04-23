@@ -1,4 +1,4 @@
-// LED动画编辑器优化版
+// LED动画编辑器优化版 - 完整集成CharBitmapGenerator
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -91,6 +91,11 @@ Window {
     property int spacingCols: 1
     property var charBitmapCache: ({})
 
+    // CharBitmapGenerator实例
+    property var charBitmapGenerator: null
+    property bool charGeneratorReady: false
+    property bool useCppCharGenerator: true
+
     // 内部属性
     property string animationText: "LED文字效果"
     property real fontSizeProperty: 54
@@ -105,6 +110,177 @@ Window {
     signal gradientApplied(var gradient)
     signal generateLedDataRequested()
     signal exportEffectRequested()
+    signal charGeneratorInitialized(bool success, string mode)
+    signal charBitmapLoaded(string ledchar, var bitmap)
+
+    // 初始化CharBitmapGenerator
+    function initCharBitmapGenerator() {
+        console.log("正在初始化CharBitmapGenerator...");
+
+        try {
+            // 尝试创建C++版本的CharBitmapGenerator
+            if (useCppCharGenerator) {
+                // 检查是否有C++版本可用
+                charBitmapGenerator = Qt.createQmlObject(
+                    'import LedPlayer 1.0; CharBitmapGenerator { }',
+                    animationEditorDialog,
+                    "CharBitmapGeneratorCpp"
+                );
+
+                if (charBitmapGenerator) {
+                    console.log("C++ CharBitmapGenerator创建成功");
+                    charGeneratorReady = true;
+                    charGeneratorInitialized(true, "C++");
+                    setupCharGeneratorProperties();
+                    return;
+                }
+            }
+        } catch (error) {
+            console.warn("C++ CharBitmapGenerator创建失败:", error);
+        }
+
+        // 如果C++版本不可用，使用纯QML版本
+        console.log("使用纯QML CharBitmapGenerator实现");
+        charBitmapGenerator = createQmlCharBitmapGenerator();
+        if (charBitmapGenerator) {
+            charGeneratorReady = true;
+            charGeneratorInitialized(true, "QML");
+        } else {
+            charGeneratorInitialized(false, "None");
+        }
+    }
+
+    // 创建纯QML版本的CharBitmapGenerator
+    function createQmlCharBitmapGenerator() {
+        var component = Qt.createComponent("../utils/CharBitmapGenerator.qml");
+        if (component.status === Component.Ready) {
+            return component.createObject(animationEditorDialog, {});
+        } else {
+            console.error("无法创建QML CharBitmapGenerator:", component.errorString());
+            return null;
+        }
+    }
+
+    // 设置CharBitmapGenerator属性
+    function setupCharGeneratorProperties() {
+        if (charBitmapGenerator) {
+            charBitmapGenerator.charWidth = charWidthLeds;
+            charBitmapGenerator.charHeight = charHeightLeds;
+            charBitmapGenerator.enableAntialiasing = true;
+            charBitmapGenerator.threshold = 30;
+
+            // 启用调试模式
+            charBitmapGenerator.setDebugEnabled(true);
+            charBitmapGenerator.setDebugPath(Qt.application.dataPath + "/char_bitmaps");
+
+            console.log("CharBitmapGenerator设置完成");
+            console.log("Char Width:", charBitmapGenerator.charWidth);
+            console.log("Char Height:", charBitmapGenerator.charHeight);
+        }
+    }
+
+    // 获取字符点阵
+    function getCharBitmapDynamic(ledchar, fontSize, fontFamily) {
+        if (!charGeneratorReady || !charBitmapGenerator) {
+            console.warn("CharBitmapGenerator未初始化，使用备用方案");
+            return getCharBitmapBackup(ledchar, fontSize, fontFamily);
+        }
+
+        try {
+            var bitmap = charBitmapGenerator.getCharBitmap(ledchar, fontSize, fontFamily);
+            if (bitmap && bitmap.length > 0) {
+                // console.log("获取字符点阵成功:", ledchar, "尺寸:", bitmap.length, "x", (bitmap[0] ? bitmap[0].length : 0));
+                charBitmapLoaded(ledchar, bitmap);
+                return bitmap;
+            } else {
+                console.warn("CharBitmapGenerator返回空点阵，使用备用方案");
+                return getCharBitmapBackup(ledchar, fontSize, fontFamily);
+            }
+        } catch (error) {
+            console.error("获取字符点阵时出错:", error);
+            return getCharBitmapBackup(ledchar, fontSize, fontFamily);
+        }
+    }
+
+    // 备用字符点阵生成函数
+    function getCharBitmapBackup(ledchar, fontSize, fontFamily) {
+        console.log("使用备用字符点阵生成:", ledchar);
+
+        const width = 16;
+        const height = 16;
+        let bitmap = [];
+
+        // 统一转为大写处理
+        const ch = ledchar.toUpperCase();
+
+        if (ch === 'L') {
+            // L：左竖线 + 底横线
+            for (let i = 0; i < height; i++) {
+                let row = [];
+                for (let j = 0; j < width; j++) {
+                    if (j === 0 || i === height - 1) {
+                        row.push(1);
+                    } else {
+                        row.push(0);
+                    }
+                }
+                bitmap.push(row);
+            }
+        }
+        else if (ch === 'E') {
+            // E：左竖线 + 上、中、下横线
+            const midRow = Math.floor(height / 2);
+            for (let i = 0; i < height; i++) {
+                let row = [];
+                for (let j = 0; j < width; j++) {
+                    if (j === 0 || i === 0 || i === midRow || i === height - 1) {
+                        row.push(1);
+                    } else {
+                        row.push(0);
+                    }
+                }
+                bitmap.push(row);
+            }
+        }
+        else if (ch === 'D') {
+            // D：左竖线 + 顶横线 + 底横线 + 右侧弧线
+            for (let i = 0; i < height; i++) {
+                let row = [];
+                // 左侧竖线
+                row.push(1);
+                // 中间列
+                for (let j = 1; j < width - 1; j++) {
+                    let isSet = 0;
+                    if (i === 0 && j <= 13) isSet = 1;
+                    else if (i === height - 1 && j <= 14) isSet = 1;
+                    else if (i > 0 && i < height - 1) {
+                        let t = (i / (height - 1)) * Math.PI;
+                        let rightBound = Math.floor(11 + 4 * Math.sin(t));
+                        if (j === rightBound) isSet = 1;
+                    }
+                    row.push(isSet);
+                }
+                row.push(0);
+                bitmap.push(row);
+            }
+        }
+        else {
+            // 默认生成16x16边框
+            for (let i = 0; i < height; i++) {
+                let row = [];
+                for (let j = 0; j < width; j++) {
+                    if (i === 0 || i === height - 1 || j === 0 || j === width - 1) {
+                        row.push(1);
+                    } else {
+                        row.push(0);
+                    }
+                }
+                bitmap.push(row);
+            }
+        }
+
+        return bitmap;
+    }
 
     // 计算网格参数
     function calculateGridParameters() {
@@ -198,149 +374,6 @@ Window {
         return gradientStops[gradientStops.length - 1].color;
     }
 
-    // 获取字符点阵
-    // function getCharBitmapDynamic(ledchar, fontSize, fontFamily) {
-    //     const width = 16;
-    //     const height = 16;
-    //     let bitmap = [];
-
-    //     // 统一转为大写处理
-    //     const ch = ledchar.toUpperCase();
-
-    //     if (ch === 'L') {
-    //         // L：左竖线 + 底横线
-    //         for (let i = 0; i < height; i++) {
-    //             let row = [];
-    //             for (let j = 0; j < width; j++) {
-    //                 if (j === 0 || i === height - 1) {
-    //                     row.push(1);
-    //                 } else {
-    //                     row.push(0);
-    //                 }
-    //             }
-    //             bitmap.push(row);
-    //         }
-    //     }
-    //     else if (ch === 'E') {
-    //         // E：左竖线 + 上、中、下横线
-    //         const midRow = Math.floor(height / 2);
-    //         for (let i = 0; i < height; i++) {
-    //             let row = [];
-    //             for (let j = 0; j < width; j++) {
-    //                 if (j === 0 || i === 0 || i === midRow || i === height - 1) {
-    //                     row.push(1);
-    //                 } else {
-    //                     row.push(0);
-    //                 }
-    //             }
-    //             bitmap.push(row);
-    //         }
-    //     }
-    //     else if (ch === 'D') {
-    //         // D：左竖线 + 顶横线 + 底横线 + 右侧弧线
-    //         for (let i = 0; i < height; i++) {
-    //             let row = [];
-    //             // 左侧竖线
-    //             row.push(1);
-    //             // 中间列
-    //             for (let j = 1; j < width - 1; j++) {
-    //                 let isSet = 0;
-    //                 if (i === 0 && j <= 13) isSet = 1;
-    //                 else if (i === height - 1 && j <= 14) isSet = 1;
-    //                 else if (i > 0 && i < height - 1) {
-    //                     let t = (i / (height - 1)) * Math.PI;
-    //                     let rightBound = Math.floor(11 + 4 * Math.sin(t));
-    //                     if (j === rightBound) isSet = 1;
-    //                 }
-    //                 row.push(isSet);
-    //             }
-    //             row.push(0);
-    //             bitmap.push(row);
-    //         }
-    //     }
-    //     else {
-    //         // 默认生成16x16边框
-    //         for (let i = 0; i < height; i++) {
-    //             let row = [];
-    //             for (let j = 0; j < width; j++) {
-    //                 if (i === 0 || i === height - 1 || j === 0 || j === width - 1) {
-    //                     row.push(1);
-    //                 } else {
-    //                     row.push(0);
-    //                 }
-    //             }
-    //             bitmap.push(row);
-    //         }
-    //     }
-
-    //     return bitmap;
-    // }
-    // function getCharBitmapDynamic(ledchar, fontSize, fontFamily) {
-    //     var cacheKey = ledchar + "_" + fontFamily + "_" + fontSize + "_" + charWidthLeds + "x" + charHeightLeds;
-    //     if (charBitmapCache[cacheKey]) {
-    //         return charBitmapCache[cacheKey];
-    //     }
-
-    //     // 画布大小：确保每个 LED 单元格至少对应 10x10 像素，提高采样精度
-    //     var canvasSize = Math.max(fontSize * 2, 240);
-    //     offscreenCharCanvas.width = canvasSize;
-    //     offscreenCharCanvas.height = canvasSize;
-
-    //     var ctx = offscreenCharCanvas.getContext('2d');
-    //     if (!ctx) {
-    //         console.warn("Failed to get 2d context");
-    //         return [];
-    //     }
-
-    //     // 黑色背景
-    //     ctx.fillStyle = "#000000";
-    //     ctx.fillRect(0, 0, canvasSize, canvasSize);
-    //     // 白色文字
-    //     ctx.fillStyle = "#FFFFFF";
-    //     ctx.font = fontSize + "px " + fontFamily;
-    //     ctx.textAlign = "center";
-    //     ctx.textBaseline = "middle";
-    //     ctx.fillText(ledchar, canvasSize / 2, canvasSize / 2);
-
-    //     var imageData = ctx.getImageData(0, 0, canvasSize, canvasSize);
-    //     var data = imageData.data;
-
-    //     var cellW = canvasSize / charWidthLeds;
-    //     var cellH = canvasSize / charHeightLeds;
-
-    //     var bitmap = [];
-    //     for (var row = 0; row < charHeightLeds; row++) {
-    //         var rowArray = [];
-    //         for (var col = 0; col < charWidthLeds; col++) {
-    //             var startX = col * cellW;
-    //             var endX = (col + 1) * cellW;
-    //             var startY = row * cellH;
-    //             var endY = (row + 1) * cellH;
-
-    //             var totalBrightness = 0;
-    //             var pixelCount = 0;
-    //             for (var py = Math.floor(startY); py < Math.ceil(endY); py++) {
-    //                 for (var px = Math.floor(startX); px < Math.ceil(endX); px++) {
-    //                     if (px >= 0 && px < canvasSize && py >= 0 && py < canvasSize) {
-    //                         var idx = (py * canvasSize + px) * 4;
-    //                         totalBrightness += data[idx];
-    //                         pixelCount++;
-    //                     }
-    //                 }
-    //             }
-    //             var avgBrightness = totalBrightness / pixelCount;
-    //             // 阈值 30 适用于大多数情况
-    //             var isLit = avgBrightness > 30;
-    //             rowArray.push(isLit ? 1 : 0);
-    //         }
-    //         bitmap.push(rowArray);
-    //     }
-
-    //     charBitmapCache[cacheKey] = bitmap;
-    //     console.log("bitmaps:"+cacheKey + bitmap)
-    //     return bitmap;
-    // }
-
     // 计算LED颜色
     function calculateLedColor(col, row) {
         var text = animationText;
@@ -380,7 +413,8 @@ Window {
             // 垂直方向：如果LED行超出字符高度，则不点亮
             if (row >= 0 && row < charHeightLeds) {
                 var ch = text.charAt(charIndex);
-                var bitmap =charBitmapGenerator.getCharBitmap(ch, fontSizeProperty, fontNameProperty);
+                var bitmap = getCharBitmapDynamic(ch, fontSizeProperty, fontNameProperty);
+
                 if (bitmap && bitmap[row] && bitmap[row][localCol] === 1) {
                     var progress = charIndex / (text.length - 1);
                     if (useGradient) {
@@ -400,6 +434,43 @@ Window {
             var intervalMs = (gridCellWidth / scrollSpeed) * 1000;
             updateLEDTimer.interval = Math.min(200, Math.max(10, intervalMs));
         }
+    }
+
+    // 测试CharBitmapGenerator
+    function testCharBitmapGenerator() {
+        console.log("=== 测试CharBitmapGenerator ===");
+
+        if (!charGeneratorReady) {
+            console.error("CharBitmapGenerator未就绪");
+            return;
+        }
+
+        // 测试简单字符
+        var testChars = ["L", "E", "D", "A", "B", "C"];
+        for (var i = 0; i < testChars.length; i++) {
+            var ch = testChars[i];
+            console.log("测试字符:", ch);
+
+            var bitmap = getCharBitmapDynamic(ch, 24, "Arial");
+            if (bitmap && bitmap.length > 0) {
+                console.log("字符点阵尺寸:", bitmap.length, "x", (bitmap[0] ? bitmap[0].length : 0));
+
+                // 显示前几行
+                var previewRows = Math.min(5, bitmap.length);
+                for (var r = 0; r < previewRows; r++) {
+                    var rowStr = "";
+                    var previewCols = Math.min(10, bitmap[r].length);
+                    for (var c = 0; c < previewCols; c++) {
+                        rowStr += (bitmap[r][c] === 1) ? "██" : "  ";
+                    }
+                    console.log("  " + rowStr);
+                }
+            } else {
+                console.error("获取字符点阵失败:", ch);
+            }
+        }
+
+        console.log("=== 测试完成 ===");
     }
 
     // 主内容容器
@@ -454,6 +525,47 @@ Window {
                     font.bold: true
                     font.pixelSize: 16
                     Layout.fillWidth: true
+                }
+
+                // 字符生成器状态指示
+                Rectangle {
+                    width: 12
+                    height: 12
+                    radius: 6
+                    color: charGeneratorReady ? "#00FF00" : "#FF0000"
+                    border.color: "#FFFFFF"
+                    border.width: 1
+                }
+
+                Text {
+                    text: charGeneratorReady ? "就绪" : "未就绪"
+                    color: charGeneratorReady ? "#00FF00" : "#FF0000"
+                    font.pixelSize: 12
+                }
+
+                Button {
+                    id: testGeneratorBtn
+                    text: "测试生成器"
+                    width: 80
+                    height: 30
+                    visible: charGeneratorReady
+
+                    onClicked: {
+                        testCharBitmapGenerator();
+                    }
+
+                    background: Rectangle {
+                        color: parent.pressed ? "#4a5568" : "#2b6cb0"
+                        radius: 4
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 12
+                    }
                 }
 
                 Button {
@@ -596,6 +708,9 @@ Window {
                                 if (textContainer) {
                                     ctx.fillText("文字位置: " + textContainer.x.toFixed(0), 10, height - 50);
                                 }
+
+                                // 显示字符生成器状态
+                                ctx.fillText("字符生成器: " + (charGeneratorReady ? "就绪" : "未就绪"), 10, height - 70);
                             }
                         }
 
@@ -989,6 +1104,11 @@ Window {
     }
 
     Component.onCompleted: {
+        console.log("LED动画编辑器初始化...");
+
+        // 初始化CharBitmapGenerator
+        initCharBitmapGenerator();
+
         calculateGridParameters();
         if (textContainer) {
             textContainer.x = textContainerStartX;

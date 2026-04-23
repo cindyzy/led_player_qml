@@ -49,7 +49,7 @@ QVariantList CharBitmapGenerator::getCharBitmap(const QString& text,
     {
         QMutexLocker locker(&m_cacheMutex);
         if (m_bitmapCache.contains(cacheKey)) {
-            qDebug() << "Cache hit for key:" << cacheKey;
+            // qDebug() << "Cache hit for key:" << cacheKey;
             return m_bitmapCache[cacheKey];
         }
     }
