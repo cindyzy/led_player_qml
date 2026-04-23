@@ -91,7 +91,11 @@ Window {
         textContainerStartX = animationPreviewArea.width;
         textContainerEndX = -textContainer.width;
         console.log("=== 位置计算 ===");
-
+        updateTimerInterval();
+            // 重置位置
+            if (!previewPlaying) {
+                textContainer.x = textContainerStartX;
+            }
             // console.log("textContainer.width:", textContainer.width);
             // console.log("animationPreviewArea.width:", animationPreviewArea.width);
     }
@@ -163,7 +167,19 @@ Window {
 
         return "#202020";  // 不在文字范围内，返回暗灰色
     }
+    // 动态调整 Timer 间隔以实现 scrollSpeed 控制
+    function updateTimerInterval() {
+        if (gridCellWidth > 0) {
+            // 移动一格所需时间（毫秒）= 一格距离 / 速度（像素/秒）* 1000
+            var intervalMs = (gridCellWidth / scrollSpeed) * 1000;
+            // 限制最小间隔 10ms，最大 200ms
+            updateLEDTimer.interval = Math.min(200, Math.max(10, intervalMs));
+        }
+    }
 
+    // 监听 scrollSpeed 或 gridCellWidth 变化
+    onScrollSpeedChanged: updateTimerInterval()
+    onGridCellWidthChanged: updateTimerInterval()
     // 主内容容器
     Rectangle {
         id: popupContainer
@@ -454,31 +470,31 @@ Window {
                     // 滚动动画
                     // 替换原有的 PropertyAnimation
                     // 滚动动画 - 使用更可靠的方式
-                        SequentialAnimation {
-                            id: scrollAnimation
-                            loops: Animation.Infinite
-                            running: previewPlaying
+                        // SequentialAnimation {
+                        //     id: scrollAnimation
+                        //     loops: Animation.Infinite
+                        //     running: previewPlaying
 
-                            PropertyAnimation {
-                                target: textContainer
-                                property: "x"
-                                from: textContainerStartX
-                                to: textContainerEndX
-                                duration: (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000
-                                easing.type: Easing.Linear
-                            }
+                        //     PropertyAnimation {
+                        //         target: textContainer
+                        //         property: "x"
+                        //         from: textContainerStartX
+                        //         to: textContainerEndX
+                        //         duration: (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000
+                        //         easing.type: Easing.Linear
+                        //     }
 
-                            onRunningChanged: {
-                                if (running) {
-                                    console.log("动画运行中");
-                                    // 确保起始位置正确
-                                    textContainer.x = textContainerStartX;
-                                    updateLEDTimer.start();
-                                } else {
-                                    updateLEDTimer.stop();
-                                }
-                            }
-                        }
+                        //     onRunningChanged: {
+                        //         if (running) {
+                        //             console.log("动画运行中");
+                        //             // 确保起始位置正确
+                        //             textContainer.x = textContainerStartX;
+                        //             updateLEDTimer.start();
+                        //         } else {
+                        //             updateLEDTimer.stop();
+                        //         }
+                        //     }
+                        // }
 
                     // 定时更新LED网格
                     Timer {
@@ -486,16 +502,18 @@ Window {
                         interval:16  // 约60fps
                         repeat: true
                         running: previewPlaying
+                        property real stepDistance: gridCellWidth
                         onTriggered: {
-                           if (textContainer.x > textContainerEndX) {
-                                textContainer.x-=gridCellWidth
-                                console.log("gridCellWidth:"+gridCellWidth)
-                                console.log("textContainer.x:"+textContainer.x)
-                                // textContainer.x -= scrollSpeed * 0.016;  // 每帧移动距离
-                                wiringCanvas.requestPaint();
-                            } else {
+                            // 移动一格
+                            textContainer.x -= stepDistance;
+
+                            // 检查是否移出左边界
+                            if (textContainer.x <= textContainerEndX) {
                                 textContainer.x = textContainerStartX;
                             }
+
+                            // 刷新 LED 显示
+                            wiringCanvas.requestPaint();
                         }
                     }
 
@@ -711,9 +729,9 @@ Window {
                                             if (previewPlaying) {
                                                 calculateGridParameters();
                                                 textContainer.x = textContainerStartX;
-                                                scrollAnimation.start();
+                                                updateLEDTimer.start();
                                             } else {
-                                                scrollAnimation.stop();
+                                                updateLEDTimer.stop();
                                             }
                                         }
                                     }
