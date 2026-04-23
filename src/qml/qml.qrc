@@ -1,0 +1,33 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>Main.qml</file>
+        <file>MainLayout.qml</file>
+        <file>ThemeManager.qml</file>
+<!--        <file>qmldir</file>-->
+        <file>components/MenuButton.qml</file>
+        <file>components/PropertyField.qml</file>
+        <file>components/PropertyGroup.qml</file>
+        <file>components/SettingGroup.qml</file>
+        <file>components/TreeItem.qml</file>
+        <file>components/WiringButton.qml</file>
+        <file>components/ImgButton.qml</file>
+        <file>components/ColorSwatch.qml</file>
+        <file>components/GradientSwatch.qml</file>
+        <file>components/TimeLineControl.qml</file>
+        <file>views/MenuBarArea.qml</file>
+        <file>views/PlaybackControlBar.qml</file>
+        <file>views/PlaylistPanel.qml</file>
+        <file>views/PropertyPanel.qml</file>
+        <file>views/StatusBarArea.qml</file>
+        <file>views/VideoPreviewArea.qml</file>
+        <file>dialogs/QuickWiringDialog.qml</file>
+        <file>dialogs/AnimationEditorDialog.qml</file>
+        <file>dialogs/HardwareSettingsDialog.qml</file>
+        <file>dialogs/NewProjectDialog.qml</file>
+        <file>dialogs/NewWiringDialog.qml</file>
+        <!-- 资源文件示例 -->
+<!--        <file>resources/images/icon.png</file>
+        <file>resources/fonts/NotoSansSC-Regular.ttf</file>-->
+    </qresource>
+</RCC>

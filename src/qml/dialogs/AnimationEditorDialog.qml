@@ -52,49 +52,158 @@ Window {
     property real textContainerStartX: 0
     property real textContainerEndX: 0
     //字符
-    property int charWidthLeds: 5      // 每个字符占用的 LED 列数
-    property int charHeightLeds: 5     // 每个字符占用的 LED 行数
+    property int charWidthLeds: 16      // 每个字符占用的 LED 列数
+    property int charHeightLeds: 16     // 每个字符占用的 LED 行数
     property int spacingCols: 1        // 字符之间的间隔列数
     property var charBitmapCache: ({})  // 缓存字符的点阵数据
     //实现字符点阵生成函数（简易点阵）
+    // function getCharBitmapDynamic(ledchar, fontSize, fontFamily) {
+    //     var cacheKey = ledchar + "_" + fontFamily + "_" + fontSize + "_" + charWidthLeds + "x" + charHeightLeds;
+    //     if (charBitmapCache[cacheKey]) {
+    //         return charBitmapCache[cacheKey];
+    //     }
 
-    function getCharBitmap(ledchar) {
-        var bitmaps = {
-            'L': [
-                [1,0,0,0,0],
-                [1,0,0,0,0],
-                [1,0,0,0,0],
-                [1,0,0,0,0],
-                [1,1,1,1,1]
-            ],
-            'E': [
-                [1,1,1,1,1],
-                [1,0,0,0,0],
-                [1,1,1,1,1],
-                [1,0,0,0,0],
-                [1,1,1,1,1]
-            ],
-            'D': [
-                [1,1,1,0,0],
-                [1,0,0,1,0],
-                [1,0,0,0,1],
-                [1,0,0,1,0],
-                [1,1,1,0,0]
-            ]
-        };
-        if (!bitmaps[ledchar]) {
-            // 默认生成一个边框点阵
-            var defaultBitmap = [];
-            for (var i = 0; i < charHeightLeds; i++) {
-                var row = [];
-                for (var j = 0; j < charWidthLeds; j++) {
-                    row.push((i === 0 || i === charHeightLeds-1 || j === 0 || j === charWidthLeds-1) ? 1 : 0);
+    //     // 画布大小：确保每个 LED 单元格至少对应 10x10 像素，提高采样精度
+    //     var canvasSize = Math.max(fontSize * 2, 240);
+    //     offscreenCharCanvas.width = canvasSize;
+    //     offscreenCharCanvas.height = canvasSize;
+
+    //     var ctx = offscreenCharCanvas.getContext('2d');
+    //     if (!ctx) {
+    //         console.warn("Failed to get 2d context");
+    //         return [];
+    //     }
+
+    //     // 黑色背景
+    //     ctx.fillStyle = "#000000";
+    //     ctx.fillRect(0, 0, canvasSize, canvasSize);
+    //     // 白色文字
+    //     ctx.fillStyle = "#FFFFFF";
+    //     ctx.font = fontSize + "px " + fontFamily;
+    //     ctx.textAlign = "center";
+    //     ctx.textBaseline = "middle";
+    //     ctx.fillText(ledchar, canvasSize / 2, canvasSize / 2);
+
+    //     var imageData = ctx.getImageData(0, 0, canvasSize, canvasSize);
+    //     var data = imageData.data;
+
+    //     var cellW = canvasSize / charWidthLeds;
+    //     var cellH = canvasSize / charHeightLeds;
+
+    //     var bitmap = [];
+    //     for (var row = 0; row < charHeightLeds; row++) {
+    //         var rowArray = [];
+    //         for (var col = 0; col < charWidthLeds; col++) {
+    //             var startX = col * cellW;
+    //             var endX = (col + 1) * cellW;
+    //             var startY = row * cellH;
+    //             var endY = (row + 1) * cellH;
+
+    //             var totalBrightness = 0;
+    //             var pixelCount = 0;
+    //             for (var py = Math.floor(startY); py < Math.ceil(endY); py++) {
+    //                 for (var px = Math.floor(startX); px < Math.ceil(endX); px++) {
+    //                     if (px >= 0 && px < canvasSize && py >= 0 && py < canvasSize) {
+    //                         var idx = (py * canvasSize + px) * 4;
+    //                         totalBrightness += data[idx];
+    //                         pixelCount++;
+    //                     }
+    //                 }
+    //             }
+    //             var avgBrightness = totalBrightness / pixelCount;
+    //             // 阈值 30 适用于大多数情况
+    //             var isLit = avgBrightness > 30;
+    //             rowArray.push(isLit ? 1 : 0);
+    //         }
+    //         bitmap.push(rowArray);
+    //     }
+
+    //     charBitmapCache[cacheKey] = bitmap;
+    //     console.log("bitmaps:"+cacheKey + bitmap)
+    //     return bitmap;
+    // }
+
+    function getCharBitmapDynamic(ledchar, fontSize, fontFamily) {
+        const width = 16;   // 点阵宽度
+        const height = 16;  // 点阵高度
+        let bitmap = [];
+
+        // 统一转为大写处理
+        const ch = ledchar.toUpperCase();
+
+        if (ch === 'L') {
+            // L：左竖线 + 底横线
+            for (let i = 0; i < height; i++) {
+                let row = [];
+                for (let j = 0; j < width; j++) {
+                    if (j === 0 || i === height - 1) {
+                        row.push(1);
+                    } else {
+                        row.push(0);
+                    }
                 }
-                defaultBitmap.push(row);
+                bitmap.push(row);
             }
-            return defaultBitmap;
         }
-        return bitmaps[ledchar];
+        else if (ch === 'E') {
+            // E：左竖线 + 上、中、下横线
+            const midRow = Math.floor(height / 2); // 第8行（0-index）
+            for (let i = 0; i < height; i++) {
+                let row = [];
+                for (let j = 0; j < width; j++) {
+                    if (j === 0 || i === 0 || i === midRow || i === height - 1) {
+                        row.push(1);
+                    } else {
+                        row.push(0);
+                    }
+                }
+                bitmap.push(row);
+            }
+        }
+        else if (ch === 'D') {
+            // D：左竖线 + 顶横线 + 底横线 + 右侧弧线（通过正弦曲线模拟圆弧）
+            for (let i = 0; i < height; i++) {
+                let row = [];
+                // 左侧竖线
+                row.push(1);
+                // 中间列（1 到 width-2）
+                for (let j = 1; j < width - 1; j++) {
+                    let isSet = 0;
+                    // 顶横线（第0行，从列1到列13）
+                    if (i === 0 && j <= 13) isSet = 1;
+                    // 底横线（第15行，整行除最右侧留空一点，也可全画）
+                    else if (i === height - 1 && j <= 14) isSet = 1;
+                    // 右侧弧线：根据行号计算弧线上的列位置
+                    else if (i > 0 && i < height - 1) {
+                        // 弧度从顶部到底部，中间凸出到最大列（列14或15）
+                        let t = (i / (height - 1)) * Math.PI; // t 范围 0 到 PI
+                        let rightBound = Math.floor(11 + 4 * Math.sin(t)); // 弧线从列11逐渐到列15再回落到列11
+                        if (j === rightBound) isSet = 1;
+                    }
+                    row.push(isSet);
+                }
+                // 最后一列（列15）通常为0，保持轮廓清晰
+                row.push(0);
+                bitmap.push(row);
+            }
+        }
+        else {
+            // 默认生成16x16边框（四周为1，内部为0）
+            for (let i = 0; i < height; i++) {
+                let row = [];
+                for (let j = 0; j < width; j++) {
+                    if (i === 0 || i === height - 1 || j === 0 || j === width - 1) {
+                        row.push(1);
+                    } else {
+                        row.push(0);
+                    }
+                }
+                bitmap.push(row);
+            }
+        }
+
+        console.log("bitmaps:" + ledchar, bitmap);
+        return bitmap;
     }
     // 计算网格参数
     function calculateGridParameters() {
@@ -251,7 +360,7 @@ Window {
             // 垂直方向：如果 LED 行超出字符高度，则不点亮
             if (row >= 0 && row < charHeightLeds) {
                 var ch = text.charAt(charIndex);
-                var bitmap = getCharBitmap(ch);
+                var bitmap = getCharBitmapDynamic(ch,fontSizeProperty.value,fontNameProperty.value);
                 if (bitmap && bitmap[row] && bitmap[row][localCol] === 1) {
                     // 根据字符位置计算颜色渐变（可选）
                     var progress = charIndex / (text.length - 1);
@@ -386,7 +495,17 @@ Window {
                         id: rollingContainer
                         anchors.fill: parent
                         clip: true
-
+                        Canvas {
+                            id: offscreenCharCanvas
+                            visible: false
+                            // 尺寸会在函数中动态调整
+                            Component.onCompleted: {
+                                offscreenCharCanvas.getContext('2d');  // 提前初始化
+                                calculateGridParameters();
+                                textContainer.x = textContainerStartX;
+                                wiringCanvas.requestPaint();
+                            }
+                        }
                         // LED网格Canvas
                         Canvas {
                             id: wiringCanvas
@@ -473,9 +592,9 @@ Window {
                                 console.log("文字位置: " + textContainer.x)
 
                                 // 绘制文字容器轮廓（用于调试）
-                                ctx.strokeStyle = "#FF0000";
-                                ctx.lineWidth = 2;
-                                ctx.strokeRect(textContainer.x, gridOffsetY, textContainer.width, gridTotalHeight);
+                                // ctx.strokeStyle = "#FF0000";
+                                // ctx.lineWidth = 2;
+                                // ctx.strokeRect(textContainer.x, gridOffsetY, textContainer.width, gridTotalHeight);
                             }
                         }
 
@@ -565,34 +684,6 @@ Window {
                         }
                     }
 
-                    // 滚动动画
-                    // 替换原有的 PropertyAnimation
-                    // 滚动动画 - 使用更可靠的方式
-                        // SequentialAnimation {
-                        //     id: scrollAnimation
-                        //     loops: Animation.Infinite
-                        //     running: previewPlaying
-
-                        //     PropertyAnimation {
-                        //         target: textContainer
-                        //         property: "x"
-                        //         from: textContainerStartX
-                        //         to: textContainerEndX
-                        //         duration: (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000
-                        //         easing.type: Easing.Linear
-                        //     }
-
-                        //     onRunningChanged: {
-                        //         if (running) {
-                        //             console.log("动画运行中");
-                        //             // 确保起始位置正确
-                        //             textContainer.x = textContainerStartX;
-                        //             updateLEDTimer.start();
-                        //         } else {
-                        //             updateLEDTimer.stop();
-                        //         }
-                        //     }
-                        // }
 
                     // 定时更新LED网格
                     Timer {
@@ -615,24 +706,6 @@ Window {
                         }
                     }
 
-                    // 更新滚动动画
-                    function updateScrollAnimation() {
-                        var wasPlaying = scrollAnimation.running;
-                        scrollAnimation.stop();
-
-                        // 重新计算起始和结束位置
-                        calculateGridParameters();
-                        scrollAnimation.from = textContainerStartX;
-                        scrollAnimation.to = textContainerEndX;
-                        scrollAnimation.duration = (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000;
-
-                        if (wasPlaying) {
-                            textContainer.x = textContainerStartX;
-                            scrollAnimation.start();
-                        }
-
-                        wiringCanvas.requestPaint();
-                    }
 
                                  }
 
@@ -860,7 +933,6 @@ Window {
                                         // 重新计算文字容器宽度
                                         var totalCols = animationText.text.length * charWidthLeds + (animationText.text.length - 1) * spacingCols;
                                         textContainer.width = totalCols * gridCellWidth;
-                                        updateScrollAnimation();
                                         wiringCanvas.requestPaint();
                                     }
                                 }
@@ -937,7 +1009,6 @@ Window {
                                             fieldType: "combo"
                                             options: ["宋体", "微软雅黑", "黑体", "楷体"]
                                             onValueChanged: {
-                                                updateScrollAnimation()
                                                 wiringCanvas.requestPaint()
                                             }
                                         }
@@ -949,7 +1020,6 @@ Window {
                                             from: 1
                                             to: 200
                                             onValueChanged: {
-                                                updateScrollAnimation()
                                                 wiringCanvas.requestPaint()
                                             }
                                         }
@@ -1156,7 +1226,6 @@ Window {
                             Layout.preferredWidth: 100
                             onValueChanged: {
                                 scrollSpeed = value
-                                animationPreviewArea.updateScrollAnimation()
                             }
                         }
                         Label {
@@ -1352,13 +1421,13 @@ Window {
             calculateGridParameters();
             textContainer.x = textContainerStartX;
             if (previewPlaying) {
-                scrollAnimation.start();
+                updateLEDTimer.start();
             }
 
             // 重新绘制LED网格
             wiringCanvas.requestPaint();
         } else {
-            scrollAnimation.stop();
+            updateLEDTimer.stop();
         }
     }
 

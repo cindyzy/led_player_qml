@@ -1,0 +1,1164 @@
+// AnimationEditorDialog.qml
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtQuick.Shapes
+import QtQuick.Window
+
+Popup {
+    id: animationEditorDialog
+    modal: true
+    focus: true
+    closePolicy: Popup.CloseOnEscape
+    width: 1200
+    height: 800
+    property bool dragging: false
+    // 背景遮罩
+    background: Rectangle {
+        color: "#80000000"  // 半透明黑色背景
+    }
+
+    // 主内容容器
+    Rectangle {
+        id: popupContainer
+        width: parent.width
+        height: parent.height
+        color: "#1E1E1E"
+        border.color: "#3E3E3E"
+        border.width: 2
+        radius: 8
+
+        // 阴影效果
+        layer.enabled: true
+        // layer.effect: DropShadow {
+        //     verticalOffset: 4
+        //     radius: 16
+        //     samples: 16
+        //     color: "#80000000"
+        // }
+
+        // 可拖动区域
+        // 拖动区域
+        MouseArea {
+            id: dragArea
+            anchors.fill: parent
+            cursorShape: Qt.SizeAllCursor
+
+            onPressed: {
+                dragging = true
+                startDragPos = Qt.point(mouse.x, mouse.y)
+            }
+
+            onPositionChanged: {
+                if (dragging) {
+                    var deltaX = mouse.x - startDragPos.x
+                    var deltaY = mouse.y - startDragPos.y
+                    animationEditorDialog.x += deltaX
+                    animationEditorDialog.y += deltaY
+                }
+            }
+
+            onReleased: {
+                dragging = false
+            }
+        }
+
+        // 标题栏
+        Rectangle {
+            id: titleBar
+            width: parent.width
+            height: 40
+            color: "#252526"
+            radius: 8
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 15
+                anchors.rightMargin: 10
+                spacing: 10
+
+                // 标题
+                Text {
+                    text: "动画编辑"
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pixelSize: 16
+                    Layout.fillWidth: true
+                }
+
+                // 关闭按钮
+                Button {
+                    id: closeButton
+                    width: 30
+                    height: 30
+                    flat: true
+
+                    background: Rectangle {
+                        color: closeButton.hovered ? "#FF4444" : "transparent"
+                        radius: 3
+                    }
+
+                    contentItem: Text {
+                        text: "×"
+                        color: "#FFFFFF"
+                        font.pixelSize: 20
+                        anchors.centerIn: parent
+                    }
+
+                    onClicked: animationEditorPopup.close()
+                }
+            }
+        }
+
+        // 主内容区域
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.topMargin: 40
+            spacing: 0
+
+            // 中间主体区域
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 0
+
+                // 左侧预览区域
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: "#000000"
+
+                    // 预览区域标签
+                    Text {
+                        text: "预览区域"
+                        color: "#FFFFFF"
+                        font.pixelSize: 12
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.margins: 10
+                    }
+
+                    // 彩色点阵图案模拟
+                    Grid {
+                        anchors.centerIn: parent
+                        columns: 16
+                        rows: 8
+                        spacing: 2
+
+                        Repeater {
+                            model: 128
+
+                            Rectangle {
+                                width: 20
+                                height: 20
+                                color: {
+                                    var colors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"]
+                                    return colors[index % colors.length]
+                                }
+                                radius: 3
+                            }
+                        }
+                    }
+
+                    // 预览控制栏
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: 40
+                        color: "#252526"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 20
+
+                            // 预览按钮
+                            Button {
+                                text: "预览"
+                                Layout.preferredWidth: 60
+                                Layout.preferredHeight: 25
+
+                                background: Rectangle {
+                                    color: parent.pressed ? "#0066CC" : "#007ACC"
+                                    border.color: "#0066CC"
+                                    border.width: 1
+                                    radius: 3
+                                }
+
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 12
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                            }
+
+                            // 帧数显示
+                            Text {
+                                text: "68/80"
+                                color: "#CCCCCC"
+                                font.pixelSize: 12
+                            }
+
+                            // 时间显示
+                            Text {
+                                text: "00:00:03/00:00:04"
+                                color: "#CCCCCC"
+                                font.pixelSize: 12
+                            }
+
+                            Item { Layout.fillWidth: true }
+
+                            // 总帧数和总时长
+                            Text {
+                                text: "总帧数:80  总时长:00:00:04"
+                                color: "#999999"
+                                font.pixelSize: 12
+                            }
+                        }
+                    }
+                }
+
+                // 右侧面板区域
+                Rectangle {
+                    Layout.preferredWidth: 400
+                    Layout.fillHeight: true
+                    color: "#252526"
+                    border.color: "#3E3E3E"
+                    border.width: 1
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 0
+
+                        // 色带编辑
+                        GroupBox {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 300
+                            title: "色带编辑"
+
+                            background: Rectangle {
+                                color: "transparent"
+                                border.color: "#555555"
+                                radius: 4
+                            }
+
+                            label: Text {
+                                text: "色带编辑"
+                                color: "#D4D4D4"
+                                font.bold: true
+                                font.pixelSize: 14
+                                leftPadding: 5
+                            }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                spacing: 10
+                                anchors.margins: 10
+
+                                // 内置色带
+                                ColumnLayout {
+                                    spacing: 5
+
+                                    Text {
+                                        text: "内置色带"
+                                        color: "#CCCCCC"
+                                        font.pixelSize: 12
+                                    }
+
+                                    // 色带示例
+                                    RowLayout {
+                                        spacing: 5
+
+                                        Rectangle {
+                                            width: 30
+                                            height: 20
+                                            color: "#FF0000"
+                                            border.color: "#444444"
+                                        }
+
+                                        Rectangle {
+                                            width: 30
+                                            height: 20
+                                            color: "#FF9900"
+                                            border.color: "#444444"
+                                        }
+
+                                        Rectangle {
+                                            width: 30
+                                            height: 20
+                                            color: "#FFFF00"
+                                            border.color: "#444444"
+                                        }
+
+                                        Rectangle {
+                                            width: 30
+                                            height: 20
+                                            color: "#00FF00"
+                                            border.color: "#444444"
+                                        }
+
+                                        Rectangle {
+                                            width: 30
+                                            height: 20
+                                            color: "#0000FF"
+                                            border.color: "#444444"
+                                        }
+                                    }
+                                }
+
+                                // 单色色带
+                                ColumnLayout {
+                                    spacing: 5
+
+                                    Text {
+                                        text: "单色色带"
+                                        color: "#CCCCCC"
+                                        font.pixelSize: 12
+                                    }
+
+                                    RowLayout {
+                                        spacing: 5
+
+                                        Rectangle {
+                                            width: 30
+                                            height: 20
+                                            color: "#FF0000"
+                                            border.color: "#444444"
+                                        }
+
+                                        Text {
+                                            text: "红色"
+                                            color: "#999999"
+                                            font.pixelSize: 12
+                                        }
+                                    }
+                                }
+
+                                // 外置模板
+                                ColumnLayout {
+                                    spacing: 5
+
+                                    Text {
+                                        text: "外置模板"
+                                        color: "#CCCCCC"
+                                        font.pixelSize: 12
+                                    }
+
+                                    ComboBox {
+                                        model: ["模板1", "模板2", "模板3"]
+                                        currentIndex: 0
+                                        Layout.fillWidth: true
+
+                                        background: Rectangle {
+                                            color: "#333333"
+                                            border.color: "#555555"
+                                            border.width: 1
+                                            radius: 3
+                                        }
+                                    }
+                                }
+
+                                // 已选色带
+                                ColumnLayout {
+                                    spacing: 5
+
+                                    Text {
+                                        text: "已选色带"
+                                        color: "#CCCCCC"
+                                        font.pixelSize: 12
+                                    }
+
+                                    RowLayout {
+                                        spacing: 5
+
+                                        Repeater {
+                                            model: 5
+
+                                            Rectangle {
+                                                width: 30
+                                                height: 20
+                                                color: ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"][index]
+                                                border.color: "#444444"
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // 预览按钮
+                                Button {
+                                    text: "预览"
+                                    Layout.preferredWidth: 60
+                                    Layout.preferredHeight: 25
+                                    Layout.alignment: Qt.AlignRight
+
+                                    background: Rectangle {
+                                        color: parent.pressed ? "#666666" : "#333333"
+                                        border.color: "#555555"
+                                        border.width: 1
+                                        radius: 3
+                                    }
+
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: "#CCCCCC"
+                                        font.pixelSize: 12
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+
+                                Item { Layout.fillHeight: true }
+                            }
+                        }
+
+                        // 属性设置
+                        GroupBox {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            title: "属性设置"
+
+                            background: Rectangle {
+                                color: "transparent"
+                                border.color: "#555555"
+                                radius: 4
+                            }
+
+                            label: Text {
+                                text: "属性设置"
+                                color: "#D4D4D4"
+                                font.bold: true
+                                font.pixelSize: 14
+                                leftPadding: 5
+                            }
+
+                            ScrollView {
+                                anchors.fill: parent
+
+                                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                                ColumnLayout {
+                                    width: parent.width
+                                    spacing: 10
+                                    // padding: 10
+
+                                    // 布线遮罩
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "布线遮罩"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        ComboBox {
+                                            model: ["是", "否"]
+                                            currentIndex: 0
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 显示比例
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "显示比例"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        Text {
+                                            text: "800%"
+                                            color: "#D4D4D4"
+                                            font.pixelSize: 12
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+
+                                    // 基本属性标题
+                                    Text {
+                                        text: "基本属性"
+                                        color: "#D4D4D4"
+                                        font.bold: true
+                                        font.pixelSize: 13
+                                        Layout.topMargin: 10
+                                    }
+
+                                    // 字体设置
+                                    Text {
+                                        text: "字体设置"
+                                        color: "#D4D4D4"
+                                        font.bold: true
+                                        font.pixelSize: 12
+                                    }
+
+                                    // 字体名称
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "宋体"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        Text {
+                                            text: "更多"
+                                            color: "#007ACC"
+                                            font.pixelSize: 12
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+
+                                    // 字体名称
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "字体名称"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        ComboBox {
+                                            model: ["宋体", "微软雅黑", "黑体", "楷体"]
+                                            currentIndex: 0
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 字体大小
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "宋体大小"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 54
+                                            from: 1
+                                            to: 200
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 素材名称
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "素材名称"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        TextField {
+                                            text: "炫彩文字2"
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 起点X坐标
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "起点X坐标"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 0
+                                            from: 0
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 起点Y坐标
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "起点Y坐标"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 0
+                                            from: 0
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 素材宽度
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "素材宽度"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 60
+                                            from: 1
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 素材高度
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "素材高度"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 270
+                                            from: 1
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 帧数
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "帧数"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 80
+                                            from: 1
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 素材起始帧
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "素材起始帧"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 1
+                                            from: 1
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 素材结束帧
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "素材结束帧"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 80
+                                            from: 1
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 入场帧
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "入场帧"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 1
+                                            from: 1
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 出场帧
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "出场帧"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 80
+                                            from: 1
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 重复次数
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "重复次数"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 1
+                                            from: 1
+                                            to: 9999
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 帧数追加
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "410 帧"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        Button {
+                                            text: "追加"
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: parent.pressed ? "#666666" : "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+
+                                            contentItem: Text {
+                                                text: parent.text
+                                                color: "#CCCCCC"
+                                                font.pixelSize: 12
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                        }
+                                    }
+
+                                    // 生成外置色带模板
+                                    Button {
+                                        text: "生成外置色带模板"
+                                        Layout.fillWidth: true
+
+                                        background: Rectangle {
+                                            color: parent.pressed ? "#666666" : "#333333"
+                                            border.color: "#555555"
+                                            border.width: 1
+                                            radius: 3
+                                        }
+
+                                        contentItem: Text {
+                                            text: parent.text
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                    }
+
+                                    // 修改按钮
+                                    Button {
+                                        text: "修改"
+                                        Layout.fillWidth: true
+
+                                        background: Rectangle {
+                                            color: parent.pressed ? "#666666" : "#333333"
+                                            border.color: "#555555"
+                                            border.width: 1
+                                            radius: 3
+                                        }
+
+                                        contentItem: Text {
+                                            text: parent.text
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                    }
+
+                                    // 混合类型
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "混合类型"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        ComboBox {
+                                            model: ["黑色透明", "正常", "叠加", "滤色"]
+                                            currentIndex: 0
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 镜像方式
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "镜像方式"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        ComboBox {
+                                            model: ["复制", "镜像", "不镜像"]
+                                            currentIndex: 0
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+
+                                    // 横向分区数
+                                    RowLayout {
+                                        spacing: 10
+
+                                        Text {
+                                            text: "横向分区数"
+                                            color: "#CCCCCC"
+                                            font.pixelSize: 12
+                                            Layout.preferredWidth: 100
+                                        }
+
+                                        SpinBox {
+                                            value: 1
+                                            from: 1
+                                            to: 10
+                                            stepSize: 1
+                                            editable: true
+                                            Layout.fillWidth: true
+
+                                            background: Rectangle {
+                                                color: "#333333"
+                                                border.color: "#555555"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 底部时间轴区域
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 100
+                color: "#252526"
+                border.color: "#3E3E3E"
+                border.width: 1
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 5
+                    anchors.margins: 10
+
+                    // 时间轴标题
+                    Text {
+                        text: "素材编辑·炫彩文字2"
+                        color: "#FFFFFF"
+                        font.bold: true
+                        font.pixelSize: 12
+                    }
+
+                    // 总帧数和总时长
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Text {
+                            text: "总帧数:80"
+                            color: "#CCCCCC"
+                            font.pixelSize: 12
+                        }
+
+                        Text {
+                            text: "总时长:00:00:04"
+                            color: "#CCCCCC"
+                            font.pixelSize: 12
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Text {
+                            text: "轴标:"
+                            color: "#CCCCCC"
+                            font.pixelSize: 12
+                        }
+
+                        Text {
+                            text: "1"
+                            color: "#FFFFFF"
+                            font.bold: true
+                            font.pixelSize: 12
+                        }
+                    }
+
+                    // 时间轴
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        color: "#333333"
+                        border.color: "#555555"
+                        border.width: 1
+                        radius: 3
+
+                        // 时间轴刻度
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 5
+                            spacing: 0
+
+                            Repeater {
+                                model: 20
+
+                                Item {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+
+                                    // 刻度线
+                                    Rectangle {
+                                        width: 1
+                                        height: 10
+                                        color: "#666666"
+                                        anchors.bottom: parent.bottom
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                    }
+
+                                    // 刻度值
+                                    Text {
+                                        text: index * 5
+                                        color: "#999999"
+                                        font.pixelSize: 8
+                                        anchors.top: parent.top
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                    }
+                                }
+                            }
+                        }
+
+                        // 当前帧指示器
+                        Rectangle {
+                            width: 2
+                            height: parent.height
+                            color: "#FF0000"
+                            x: parent.width * 0.85
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 显示时居中显示
+    onVisibleChanged: {
+        if (visible) {
+            // 在父窗口居中显示
+            var parentWindow = animationEditorPopup.parent
+            if (parentWindow) {
+                animationEditorPopup.x = (parentWindow.width - width) / 2
+                animationEditorPopup.y = (parentWindow.height - height) / 2
+            }
+        }
+    }
+}

@@ -1,52 +1,48 @@
 cmake_minimum_required(VERSION 3.16)
+project(LedPlayer VERSION 1.0.0 LANGUAGES CXX)
 
-project(untitled VERSION 0.1 LANGUAGES CXX)
-
+# 设置C++标准
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+# 设置Qt相关自动处理
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
-qt_standard_project_setup(REQUIRES 6.10)
+# 查找Qt6组件
+find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2)
 
-qt_add_executable(appuntitled
-    main.cpp
-)
+# 设置输出目录
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-qt_add_qml_module(appuntitled
-    URI untitled
-    QML_FILES
-        Main.qml
-        QML_FILES Main.qml
-        QML_FILES ThemeManager.qml
-        QML_FILES MainLayout.qml
-        QML_FILES ThemeManager.qml
-        QML_FILES components/MenuButton.qml components/PropertyField.qml components/PropertyGroup.qml components/SettingGroup.qml components/TreeItem.qml components/WiringButton.qml dialogs/HardwareSettingsDialog.qml dialogs/NewProjectDialog.qml dialogs/NewWiringDialog.qml views/MenuBarArea.qml views/PlaybackControlBar.qml views/PlaylistPanel.qml views/PropertyPanel.qml views/StatusBarArea.qml views/VideoPreviewArea.qml
-        QML_FILES dialogs/QuickWiringDialog.qml
-        QML_FILES components/ImgButton.qml
-        QML_FILES dialogs/AnimationEditorDialog.qml
-        QML_FILES components/ColorSwatch.qml
-        QML_FILES components/ColorSwatch.qml
-        QML_FILES components/GradientSwatch.qml
-        QML_FILES components/TimeLineControl.qml
-)
+# 添加可执行目标
+add_executable(LedPlayer)
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-set_target_properties(appuntitled PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appuntitled
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
+# 设置目标属性
+set_target_properties(LedPlayer PROPERTIES
     WIN32_EXECUTABLE TRUE
+    MACOSX_BUNDLE TRUE
 )
 
-target_link_libraries(appuntitled
-    PRIVATE Qt6::Quick
+# 设置目标源文件
+target_sources(LedPlayer PRIVATE
+    src/app/main.cpp
+    src/qml/qml.qrc
 )
-target_compile_definitions(appuntitled PRIVATE QT_QML_DEBUG)
-install(TARGETS appuntitled
+
+# 链接Qt库
+target_link_libraries(LedPlayer PRIVATE
+    Qt6::Core
+    Qt6::Quick
+    Qt6::QuickControls2
+)
+
+# 设置安装目标
+install(TARGETS LedPlayer
+    RUNTIME DESTINATION bin
     BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION lib
 )
