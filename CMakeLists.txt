@@ -27,6 +27,7 @@ qt_add_qml_module(appuntitled
         QML_FILES components/ColorSwatch.qml
         QML_FILES components/ColorSwatch.qml
         QML_FILES components/GradientSwatch.qml
+        QML_FILES components/TimeLineControl.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

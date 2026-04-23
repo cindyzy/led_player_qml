@@ -18,13 +18,17 @@ Window {
     // 添加滚动属性
     property real scrollSpeed: 200  // 像素/秒
     property real currentScrollX: 0
+    property real previewScale: 1.0  // 预览缩放比例
 
     // 文字颜色属性
     property color textColor: "#FF0000"  // 默认红色
-    property var gradientStops: []
+    property var gradientStops: [
+        {color: "#FF0000", position: 0.0},
+        {color: "#FFFF00", position: 0.5},
+        {color: "#00FF00", position: 1.0}
+    ]
     property bool useGradient: false
     property var quickWiringConfig: {
-        // 提供默认值以便测试
         return {
             width: 16,
             height: 8,
@@ -32,6 +36,132 @@ Window {
             vSpacing: 0,
             direction: "wiring_StartLeftBottom_EndRightTop_M_Horizontal"
         }
+    }
+
+    // 网格计算属性
+    property real gridOffsetX: 0
+    property real gridOffsetY: 0
+    property real gridCellWidth: 0
+    property real gridCellHeight: 0
+    property real gridTotalWidth: 0
+    property real gridTotalHeight: 0
+    property int gridCols: 0
+    property int gridRows: 0
+
+    // 文字容器位置
+    property real textContainerStartX: 0
+    property real textContainerEndX: 0
+
+    // 计算网格参数
+    function calculateGridParameters() {
+        if (!quickWiringConfig) return;
+
+        var config = quickWiringConfig;
+        var baseWidth = Math.max(1, config.width || 16);
+        var baseHeight = Math.max(1, config.height || 8);
+        var hSpacing = Math.max(0, config.hSpacing || 0);
+        var vSpacing = Math.max(0, config.vSpacing || 0);
+
+        var hFactor = hSpacing + 1;
+        var vFactor = vSpacing + 1;
+        gridCols = baseWidth * hFactor;
+        gridRows = baseHeight * vFactor;
+
+        // 计算可用空间
+        var availableWidth = animationPreviewArea.width - 20;
+        var availableHeight = animationPreviewArea.height - 20;
+
+        // 计算基础单元格大小
+        var baseCellWidth = availableWidth / gridCols;
+        var baseCellHeight = availableHeight / gridRows;
+
+        // 应用缩放
+        gridCellWidth = baseCellWidth * previewScale;
+        gridCellHeight = baseCellHeight * previewScale;
+
+        // 计算整个网格的大小
+        gridTotalWidth = gridCols * gridCellWidth;
+        gridTotalHeight = gridRows * gridCellHeight;
+
+        // 计算居中偏移
+        gridOffsetX = (animationPreviewArea.width - gridTotalWidth) / 2;
+        gridOffsetY = (animationPreviewArea.height - gridTotalHeight) / 2;
+
+        // 计算文字容器的起始和结束位置
+        textContainerStartX = animationPreviewArea.width;
+        textContainerEndX = -textContainer.width;
+        console.log("=== 位置计算 ===");
+
+            // console.log("textContainer.width:", textContainer.width);
+            // console.log("animationPreviewArea.width:", animationPreviewArea.width);
+    }
+
+    // 计算渐变颜色
+    function getGradientColor(position) {
+        if (!useGradient || gradientStops.length === 0) {
+            return textColor;
+        }
+
+        if (gradientStops.length === 1) {
+            return gradientStops[0].color;
+        }
+
+        // 确保位置在[0,1]范围内
+        position = Math.max(0, Math.min(1, position));
+
+        // 查找位置所在的区间
+        for (var i = 0; i < gradientStops.length - 1; i++) {
+            var stop1 = gradientStops[i];
+            var stop2 = gradientStops[i + 1];
+
+            if (position >= stop1.position && position <= stop2.position) {
+                // 计算插值比例
+                var t = (position - stop1.position) / (stop2.position - stop1.position);
+
+                // 解析颜色
+                var c1 = Qt.color(stop1.color);
+                var c2 = Qt.color(stop2.color);
+
+                // 插值计算颜色
+                var r = Math.floor(c1.r * 255 + (c2.r * 255 - c1.r * 255) * t);
+                var g = Math.floor(c1.g * 255 + (c2.g * 255 - c1.g * 255) * t);
+                var b = Math.floor(c1.b * 255 + (c2.b * 255 - c1.b * 255) * t);
+
+                return Qt.rgba(r/255, g/255, b/255, 1);
+            }
+        }
+
+        // 如果位置超出范围，返回最后一个颜色
+        return gradientStops[gradientStops.length - 1].color;
+    }
+
+    // 计算LED颜色 - 修复版本
+    function calculateLedColor(col, row) {
+        // 计算LED方块中心在预览区域的坐标
+        var ledCenterX = gridOffsetX + col * gridCellWidth + gridCellWidth / 2;
+
+        // 计算LED中心在文字中的相对位置
+        // 文字从右向左移动，所以我们需要计算LED中心对应文字中的哪个位置
+        var textProgress = 1.0;
+
+        if (textContainer.width > 0) {
+            // 计算LED中心相对于文字容器起始位置的距离
+            var distanceFromTextStart = ledCenterX - textContainer.x;
+
+            // 如果LED在文字范围内
+            if (distanceFromTextStart >= 0 && distanceFromTextStart <= textContainer.width) {
+                // 计算在文字中的相对位置
+                textProgress = distanceFromTextStart / textContainer.width;
+
+                if (useGradient) {
+                    return getGradientColor(textProgress);
+                } else {
+                    return textColor;
+                }
+            }
+        }
+
+        return "#202020";  // 不在文字范围内，返回暗灰色
     }
 
     // 主内容容器
@@ -81,7 +211,7 @@ Window {
                 spacing: 10
 
                 Text {
-                    text: "动画编辑"
+                    text: "动画编辑 - LED文字效果"
                     color: "#FFFFFF"
                     font.bold: true
                     font.pixelSize: 16
@@ -143,7 +273,7 @@ Window {
                         anchors.fill: parent
                         clip: true
 
-                        // wiringCanvas 作为背景
+                        // LED网格Canvas
                         Canvas {
                             id: wiringCanvas
                             anchors.fill: parent
@@ -151,79 +281,99 @@ Window {
                             z: 0
 
                             onPaint: {
-                                var ctx = getContext("2d")
-                                ctx.clearRect(0, 0, width, height)
+                                var ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
 
                                 if (!quickWiringConfig) {
-                                    return
+                                    return;
                                 }
 
-                                var config = quickWiringConfig
-                                var baseWidth = Math.max(1, config.width || 16)
-                                var baseHeight = Math.max(1, config.height || 8)
-                                var hSpacing = Math.max(0, config.hSpacing || 0)
-                                var vSpacing = Math.max(0, config.vSpacing || 0)
-                                var direction = config.direction || "wiring_StartLeftBottom_EndRightTop_M_Horizontal"
+                                // 重新计算网格参数
+                                calculateGridParameters();
 
-                                var hFactor = hSpacing + 1
-                                var vFactor = vSpacing + 1
-                                var widthVal = baseWidth * hFactor
-                                var heightVal = baseHeight * vFactor
-
-                                var cellWidth = (width - 20) / widthVal
-                                var cellHeight = (height - 20) / heightVal
-                                var squareSize = Math.max(2, Math.min(cellWidth, cellHeight) * 0.45)
+                                var squareSize = Math.max(6, Math.min(gridCellWidth, gridCellHeight) * 0.7);
 
                                 // 黑色背景
-                                ctx.fillStyle = "#000000"
-                                ctx.fillRect(0, 0, width, height)
+                                ctx.fillStyle = "#000000";
+                                ctx.fillRect(gridOffsetX, gridOffsetY, gridTotalWidth, gridTotalHeight);
 
                                 // 绘制网格线
-                                ctx.strokeStyle = "#202020"
-                                ctx.lineWidth = 1
+                                ctx.strokeStyle = "#333333";
+                                ctx.lineWidth = 1;
 
                                 // 垂直线
-                                for (var i = 0; i <= widthVal; i++) {
-                                    var x = i * cellWidth
-                                    ctx.beginPath()
-                                    ctx.moveTo(x, 0)
-                                    ctx.lineTo(x, height)
-                                    ctx.stroke()
+                                for (var i = 0; i <= gridCols; i++) {
+                                    var x = gridOffsetX + i * gridCellWidth;
+                                    ctx.beginPath();
+                                    ctx.moveTo(x, gridOffsetY);
+                                    ctx.lineTo(x, gridOffsetY + gridTotalHeight);
+                                    ctx.stroke();
                                 }
 
                                 // 水平线
-                                for (var j = 0; j <= heightVal; j++) {
-                                    var y = j * cellHeight
-                                    ctx.beginPath()
-                                    ctx.moveTo(0, y)
-                                    ctx.lineTo(width, y)
-                                    ctx.stroke()
+                                for (var j = 0; j <= gridRows; j++) {
+                                    var y = gridOffsetY + j * gridCellHeight;
+                                    ctx.beginPath();
+                                    ctx.moveTo(gridOffsetX, y);
+                                    ctx.lineTo(gridOffsetX + gridTotalWidth, y);
+                                    ctx.stroke();
                                 }
 
-                                // 绘制白色方块
-                                ctx.fillStyle = "#FFFFFF"
-                                for (j = 0; j < heightVal; j++) {
-                                    for (i = 0; i < widthVal; i++) {
-                                        var squareX = i * cellWidth + cellWidth / 2 - squareSize / 2
-                                        var squareY = j * cellHeight + cellHeight / 2 - squareSize / 2
-                                        ctx.fillRect(squareX, squareY, squareSize, squareSize)
+                                // 绘制LED方块
+                                for (j = 0; j < gridRows; j++) {
+                                    for (i = 0; i < gridCols; i++) {
+                                        var squareX = gridOffsetX + i * gridCellWidth + gridCellWidth / 2 - squareSize / 2;
+                                        var squareY = gridOffsetY + j * gridCellHeight + gridCellHeight / 2 - squareSize / 2;
+
+                                        // 计算LED颜色
+                                        var ledColor = calculateLedColor(i, j);
+
+                                        // 绘制LED方块
+                                        ctx.fillStyle = ledColor;
+
+                                        // 添加LED发光效果
+                                        ctx.shadowColor = ledColor;
+                                        ctx.shadowBlur = 8;
+                                        ctx.fillRect(squareX, squareY, squareSize, squareSize);
+
+                                        // 重置阴影
+                                        ctx.shadowBlur = 0;
+
+                                        // 添加LED边框
+                                        ctx.strokeStyle = "#666666";
+                                        ctx.lineWidth = 1;
+                                        ctx.strokeRect(squareX, squareY, squareSize, squareSize);
                                     }
                                 }
 
-                                console.log("wiringCanvas painted:", baseWidth, "x", baseHeight, "cells")
-                            }
+                                // 显示当前缩放比例
+                                ctx.fillStyle = "#FFFFFF";
+                                ctx.font = "12px Arial";
+                                ctx.fillText("缩放: " + (previewScale * 100).toFixed(0) + "%", 10, height - 10);
 
-                            onVisibleChanged: requestPaint()
+                                // 显示网格信息
+                                ctx.fillText("网格: " + gridCols + "×" + gridRows, 10, height - 30);
+
+                                // 显示文字位置信息
+                                ctx.fillText("文字位置: " + textContainer.x.toFixed(0), 10, height - 50);
+                                console.log("文字位置: " + textContainer.x)
+
+                                // 绘制文字容器轮廓（用于调试）
+                                ctx.strokeStyle = "#FF0000";
+                                ctx.lineWidth = 2;
+                                ctx.strokeRect(textContainer.x, gridOffsetY, textContainer.width, gridTotalHeight);
+                            }
                         }
 
-                        // 使用一个可见的Text组件
+                        // 文字容器 - 用于位置计算
                         Item {
                             id: textContainer
                             width: textMetrics.width
-                            height: Math.max(textMetrics.height, 50)  // 确保最小高度
-                            y: (rollingContainer.height - height) / 2
-                            x: animationPreviewArea.width
-                            z: 1  // 确保文字在wiringCanvas之上
+                            height: textMetrics.height
+                            x: textContainerStartX
+                            y: gridOffsetY
+                            z: 1
+                            visible: true  // 隐藏实际文字，只用于位置计算
 
                             // 单色文字
                             Text {
@@ -236,8 +386,6 @@ Window {
                                 renderType: Text.QtRendering
                                 horizontalAlignment: Text.AlignLeft
                                 verticalAlignment: Text.AlignVCenter
-                                visible: !useGradient
-                                z: 2
                             }
 
                             // 渐变文字
@@ -245,7 +393,6 @@ Window {
                                 id: gradientTextContainer
                                 anchors.fill: parent
                                 visible: useGradient
-                                z: 2
 
                                 Canvas {
                                     id: gradientCanvas
@@ -305,126 +452,73 @@ Window {
                     }
 
                     // 滚动动画
-                    PropertyAnimation {
-                        id: scrollAnimation
-                        target: textContainer
-                        property: "x"
-                        from: animationPreviewArea.width
-                        to: -textContainer.width
-                        duration: (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000
-                        loops: Animation.Infinite
+                    // 替换原有的 PropertyAnimation
+                    // 滚动动画 - 使用更可靠的方式
+                        SequentialAnimation {
+                            id: scrollAnimation
+                            loops: Animation.Infinite
+                            running: previewPlaying
+
+                            PropertyAnimation {
+                                target: textContainer
+                                property: "x"
+                                from: textContainerStartX
+                                to: textContainerEndX
+                                duration: (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000
+                                easing.type: Easing.Linear
+                            }
+
+                            onRunningChanged: {
+                                if (running) {
+                                    console.log("动画运行中");
+                                    // 确保起始位置正确
+                                    textContainer.x = textContainerStartX;
+                                    updateLEDTimer.start();
+                                } else {
+                                    updateLEDTimer.stop();
+                                }
+                            }
+                        }
+
+                    // 定时更新LED网格
+                    Timer {
+                        id: updateLEDTimer
+                        interval:16  // 约60fps
+                        repeat: true
                         running: previewPlaying
+                        onTriggered: {
+                           if (textContainer.x > textContainerEndX) {
+                                textContainer.x-=gridCellWidth
+                                console.log("gridCellWidth:"+gridCellWidth)
+                                console.log("textContainer.x:"+textContainer.x)
+                                // textContainer.x -= scrollSpeed * 0.016;  // 每帧移动距离
+                                wiringCanvas.requestPaint();
+                            } else {
+                                textContainer.x = textContainerStartX;
+                            }
+                        }
                     }
 
                     // 更新滚动动画
                     function updateScrollAnimation() {
-                        var wasPlaying = scrollAnimation.running
-                        scrollAnimation.stop()
-                        scrollAnimation.from = animationPreviewArea.width
-                        scrollAnimation.to = -textContainer.width
-                        scrollAnimation.duration = (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000
+                        var wasPlaying = scrollAnimation.running;
+                        scrollAnimation.stop();
+
+                        // 重新计算起始和结束位置
+                        calculateGridParameters();
+                        scrollAnimation.from = textContainerStartX;
+                        scrollAnimation.to = textContainerEndX;
+                        scrollAnimation.duration = (animationPreviewArea.width + textContainer.width) / scrollSpeed * 1000;
 
                         if (wasPlaying) {
-                            textContainer.x = animationPreviewArea.width
-                            scrollAnimation.start()
+                            textContainer.x = textContainerStartX;
+                            scrollAnimation.start();
                         }
+
+                        wiringCanvas.requestPaint();
                     }
 
-                    // 预览控制栏
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: 40
-                        color: "#252526"
-                        z: 5
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 10
-                            spacing: 20
-
-                            Button {
-                                text: previewPlaying ? "暂停" : "预览"
-                                Layout.preferredWidth: 60
-                                Layout.preferredHeight: 25
-                                background: Rectangle {
-                                    color: parent.pressed ? "#0066CC" : "#007ACC"
-                                    border.color: "#0066CC"
-                                    border.width: 1
-                                    radius: 3
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "#FFFFFF"
-                                    font.pixelSize: 12
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                onClicked: {
-                                    previewPlaying = !previewPlaying
-                                    if (previewPlaying) {
-                                        textContainer.x = animationPreviewArea.width
-                                        scrollAnimation.start()
-                                    } else {
-                                        scrollAnimation.stop()
-                                    }
-                                }
-                            }
-
-                            // 滚动速度控制
-                            RowLayout {
-                                spacing: 5
-                                Label {
-                                    text: "速度:"
-                                    color: "#CCCCCC"
-                                    font.pixelSize: 12
-                                }
-                                Slider {
-                                    id: speedSlider
-                                    from: 50
-                                    to: 500
-                                    value: scrollSpeed
-                                    stepSize: 10
-                                    Layout.preferredWidth: 100
-                                    onValueChanged: {
-                                        scrollSpeed = value
-                                        animationPreviewArea.updateScrollAnimation()
-                                    }
-                                }
-                                Label {
-                                    text: Math.round(scrollSpeed) + " px/s"
-                                    color: "#CCCCCC"
-                                    font.pixelSize: 12
-                                }
-                            }
-
-                            Text {
-                                text: animationText.text.length + " 字符"
-                                color: "#CCCCCC"
-                                font.pixelSize: 12
-                            }
-                            Text {
-                                text: {
-                                    if (textContainer.width > 0) {
-                                        var distance = animationPreviewArea.width + textContainer.width
-                                        var seconds = distance / scrollSpeed
-                                        return "滚动时长: " + seconds.toFixed(1) + "秒"
-                                    }
-                                    return "滚动时长: 0秒"
-                                }
-                                color: "#CCCCCC"
-                                font.pixelSize: 12
-                            }
-                            Item { Layout.fillWidth: true }
-                            Text {
-                                text: "总帧数:80  总时长:00:00:04"
-                                color: "#999999"
-                                font.pixelSize: 12
-                            }
-                        }
-                    }
-                }
+                                 }
 
                 // ========== 右侧面板 ==========
                 Rectangle {
@@ -462,6 +556,7 @@ Window {
                                                 useGradient = true
                                                 gradientStops = gradientSwatchStops
                                                 console.log("应用渐变:", gradientSwatchStops)
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         GradientSwatch {
@@ -474,6 +569,7 @@ Window {
                                                 useGradient = true
                                                 gradientStops = gradientSwatchStops
                                                 console.log("应用渐变:", gradientSwatchStops)
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         GradientSwatch {
@@ -486,6 +582,7 @@ Window {
                                                 useGradient = true
                                                 gradientStops = gradientSwatchStops
                                                 console.log("应用渐变:", gradientSwatchStops)
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         GradientSwatch {
@@ -497,6 +594,7 @@ Window {
                                                 useGradient = true
                                                 gradientStops = gradientSwatchStops
                                                 console.log("应用渐变:", gradientSwatchStops)
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         GradientSwatch {
@@ -509,6 +607,7 @@ Window {
                                                 useGradient = true
                                                 gradientStops = gradientSwatchStops
                                                 console.log("应用渐变:", gradientSwatchStops)
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                     }
@@ -525,6 +624,7 @@ Window {
                                                 useGradient = false
                                                 textColor = swatchColor
                                                 console.log("应用单色:", textColor)
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         ColorSwatch {
@@ -532,6 +632,7 @@ Window {
                                             onSwatchClicked: {
                                                 useGradient = false
                                                 textColor = swatchColor
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         ColorSwatch {
@@ -539,6 +640,7 @@ Window {
                                             onSwatchClicked: {
                                                 useGradient = false
                                                 textColor = swatchColor
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         ColorSwatch {
@@ -546,6 +648,7 @@ Window {
                                             onSwatchClicked: {
                                                 useGradient = false
                                                 textColor = swatchColor
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         ColorSwatch {
@@ -553,6 +656,7 @@ Window {
                                             onSwatchClicked: {
                                                 useGradient = false
                                                 textColor = swatchColor
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                     }
@@ -605,10 +709,11 @@ Window {
                                         onClicked: {
                                             previewPlaying = !previewPlaying
                                             if (previewPlaying) {
-                                                textContainer.x = animationPreviewArea.width
-                                                scrollAnimation.start()
+                                                calculateGridParameters();
+                                                textContainer.x = textContainerStartX;
+                                                scrollAnimation.start();
                                             } else {
-                                                scrollAnimation.stop()
+                                                scrollAnimation.stop();
                                             }
                                         }
                                     }
@@ -628,7 +733,7 @@ Window {
 
                                 TextField {
                                     id: animationText
-                                    text: "请输入文字"
+                                    text: "LED文字效果"
                                     color: "white"
                                     background: Rectangle {
                                         color: "#333333"
@@ -637,27 +742,47 @@ Window {
                                     Layout.fillWidth: true
                                     onTextChanged: {
                                         updateScrollAnimation()
+                                        wiringCanvas.requestPaint()
                                     }
                                 }
 
                                 PropertyGroup {
-                                    title: "预览属性"
+                                    title: "LED网格设置"
                                     expanded: true
                                     ColumnLayout {
                                         PropertyField {
-                                            label: "布线遮罩"
-                                            value: "是"
-                                            fieldType: "combo"
-                                            options: ["是", "否"]
+                                            label: "网格宽度"
+                                            value: quickWiringConfig.width
+                                            fieldType: "spin"
+                                            from: 1
+                                            to: 64
                                             onValueChanged: {
-                                                // 当布线遮罩变化时，重新绘制wiringCanvas
+                                                quickWiringConfig.width = value
                                                 wiringCanvas.requestPaint()
                                             }
                                         }
                                         PropertyField {
-                                            label: "显示比例"
-                                            value: "800%"
-                                            fieldType: "label"
+                                            label: "网格高度"
+                                            value: quickWiringConfig.height
+                                            fieldType: "spin"
+                                            from: 1
+                                            to: 32
+                                            onValueChanged: {
+                                                quickWiringConfig.height = value
+                                                wiringCanvas.requestPaint()
+                                            }
+                                        }
+                                        PropertyField {
+                                            label: "LED大小"
+                                            value: "70%"
+                                            fieldType: "combo"
+                                            options: ["50%", "60%", "70%", "80%", "90%"]
+                                        }
+                                        PropertyField {
+                                            label: "亮度"
+                                            value: "高"
+                                            fieldType: "combo"
+                                            options: ["低", "中", "高", "极高"]
                                         }
                                     }
                                 }
@@ -694,6 +819,7 @@ Window {
                                             options: ["宋体", "微软雅黑", "黑体", "楷体"]
                                             onValueChanged: {
                                                 updateScrollAnimation()
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         PropertyField {
@@ -705,11 +831,12 @@ Window {
                                             to: 200
                                             onValueChanged: {
                                                 updateScrollAnimation()
+                                                wiringCanvas.requestPaint()
                                             }
                                         }
                                         PropertyField {
                                             label: "素材名称"
-                                            value: "炫彩文字2"
+                                            value: "LED文字效果"
                                             fieldType: "text"
                                         }
                                         PropertyField {
@@ -801,7 +928,7 @@ Window {
                                             }
                                         }
                                         Button {
-                                            text: "生成外置色带模板"
+                                            text: "生成LED数据"
                                             Layout.fillWidth: true
                                             background: Rectangle {
                                                 color: parent.pressed ? "#666666" : "#333333"
@@ -809,9 +936,13 @@ Window {
                                                 border.width: 1
                                                 radius: 3
                                             }
+                                            onClicked: {
+                                                console.log("开始生成LED数据...")
+                                                wiringCanvas.requestPaint()
+                                            }
                                         }
                                         Button {
-                                            text: "修改"
+                                            text: "导出效果"
                                             Layout.fillWidth: true
                                             background: Rectangle {
                                                 color: parent.pressed ? "#666666" : "#333333"
@@ -846,100 +977,189 @@ Window {
                     }
                 }
             }
-
-            // 底部时间轴
+            // 预览控制栏
             Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 100
+                // anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 50
                 color: "#252526"
-                border.color: "#3E3E3E"
-                border.width: 1
+                z: 5
 
-                ColumnLayout {
+                RowLayout {
                     anchors.fill: parent
-                    spacing: 5
                     anchors.margins: 10
+                    spacing: 20
 
-                    Text {
-                        text: "素材编辑·炫彩文字2"
-                        color: "#FFFFFF"
-                        font.bold: true
-                        font.pixelSize: 12
-                    }
-
-                    RowLayout {
-                        Text {
-                            text: "总帧数:80"
-                            color: "#CCCCCC"
-                            font.pixelSize: 12
+                    Button {
+                        text: previewPlaying ? "暂停" : "预览"
+                        Layout.preferredWidth: 60
+                        Layout.preferredHeight: 25
+                        background: Rectangle {
+                            color: parent.pressed ? "#0066CC" : "#007ACC"
+                            border.color: "#0066CC"
+                            border.width: 1
+                            radius: 3
                         }
-                        Text {
-                            text: "总时长:00:00:04"
-                            color: "#CCCCCC"
-                            font.pixelSize: 12
-                        }
-                        Item { Layout.fillWidth: true }
-                        Text {
-                            text: "轴标:"
-                            color: "#CCCCCC"
-                            font.pixelSize: 12
-                        }
-                        Text {
-                            text: "1"
+                        contentItem: Text {
+                            text: parent.text
                             color: "#FFFFFF"
-                            font.bold: true
                             font.pixelSize: 12
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        color: "#333333"
-                        border.color: "#555555"
-                        border.width: 1
-                        radius: 3
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 5
-                            spacing: 0
-
-                            Repeater {
-                                model: 20
-                                Item {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-
-                                    Rectangle {
-                                        width: 1
-                                        height: 10
-                                        color: "#666666"
-                                        anchors.bottom: parent.bottom
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                    }
-
-                                    Text {
-                                        text: index * 5
-                                        color: "#999999"
-                                        font.pixelSize: 8
-                                        anchors.top: parent.top
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                    }
-                                }
+                        onClicked: {
+                            previewPlaying = !previewPlaying
+                            if (previewPlaying) {
+                                calculateGridParameters();
+                                textContainer.x = textContainerStartX;
+                                scrollAnimation.start();
+                            } else {
+                                scrollAnimation.stop();
                             }
                         }
+                    }
 
-                        Rectangle {
-                            width: 2
-                            height: parent.height
-                            color: "#FF0000"
-                            x: parent.width * 0.85
+                    // 滚动速度控制
+                    RowLayout {
+                        spacing: 5
+                        Label {
+                            text: "速度:"
+                            color: "#CCCCCC"
+                            font.pixelSize: 12
                         }
+                        Slider {
+                            id: speedSlider
+                            from: 50
+                            to: 500
+                            value: scrollSpeed
+                            stepSize: 10
+                            Layout.preferredWidth: 100
+                            onValueChanged: {
+                                scrollSpeed = value
+                                animationPreviewArea.updateScrollAnimation()
+                            }
+                        }
+                        Label {
+                            text: Math.round(scrollSpeed) + " px/s"
+                            color: "#CCCCCC"
+                            font.pixelSize: 12
+                        }
+                    }
+
+                    // 缩放控制
+                    RowLayout {
+                        spacing: 5
+                        Label {
+                            text: "缩放:"
+                            color: "#CCCCCC"
+                            font.pixelSize: 12
+                        }
+                        Slider {
+                            id: scaleSlider
+                            from: 0.1
+                            to: 3.0
+                            value: previewScale
+                            stepSize: 0.1
+                            Layout.preferredWidth: 100
+                            onValueChanged: {
+                                previewScale = value
+                                calculateGridParameters()
+                                wiringCanvas.requestPaint()
+                            }
+                        }
+                        Label {
+                            text: (previewScale * 100).toFixed(0) + "%"
+                            color: "#CCCCCC"
+                            font.pixelSize: 12
+                            Layout.preferredWidth: 50
+                        }
+
+                        // 缩放按钮
+                        Button {
+                            text: "100%"
+                            Layout.preferredWidth: 50
+                            Layout.preferredHeight: 25
+                            background: Rectangle {
+                                color: parent.pressed ? "#666666" : "#333333"
+                                border.color: "#555555"
+                                border.width: 1
+                                radius: 3
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: "#CCCCCC"
+                                font.pixelSize: 12
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: {
+                                previewScale = 1.0
+                                scaleSlider.value = 1.0
+                                calculateGridParameters()
+                                wiringCanvas.requestPaint()
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: animationText.text.length + " 字符"
+                        color: "#CCCCCC"
+                        font.pixelSize: 12
+                    }
+                    Text {
+                        text: {
+                            if (textContainer.width > 0) {
+                                var distance = animationPreviewArea.width + textContainer.width
+                                var seconds = distance / scrollSpeed
+                                return "滚动时长: " + seconds.toFixed(1) + "秒"
+                            }
+                            return "滚动时长: 0秒"
+                        }
+                        color: "#CCCCCC"
+                        font.pixelSize: 12
+                    }
+                    Item { Layout.fillWidth: true }
+                    Text {
+                        text: "LED网格: " + (quickWiringConfig.width * quickWiringConfig.height) + " 像素"
+                        color: "#999999"
+                        font.pixelSize: 12
                     }
                 }
             }
 
+            // 信息提示
+            Text {
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.margins: 10
+                text: "效果: 文字颜色映射到LED网格，从右向左播放"
+                color: "#AAAAAA"
+                font.pixelSize: 11
+            }
+
+            // 使用自定义控件
+            TimeLineControl {
+                id: timeline
+                Layout.fillWidth: true
+                Layout.preferredHeight: 100
+                title: "动画时间轴"
+                totalFrames: 120
+                totalDurationMs: 6000
+                currentFrame: 1
+                tickInterval: 10
+                tickCount: 12
+                playheadColor: "#FF5722"
+
+                onFrameChanged: function(frame) {
+                    console.log("当前帧:", frame)
+                    // 在这里更新预览或其他逻辑
+                }
+
+                onPlayheadMoved: function(position) {
+                    console.log("播放头位置:", position)
+                }
+            }
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 60
@@ -1010,29 +1230,50 @@ Window {
                 animationEditorDialog.x = (parentWindow.width - width) / 2
                 animationEditorDialog.y = (parentWindow.height - height) / 2
             }
-            textContainer.x = animationPreviewArea.width
+            calculateGridParameters();
+            textContainer.x = textContainerStartX;
             if (previewPlaying) {
-                scrollAnimation.start()
+                scrollAnimation.start();
             }
 
-            // 重新绘制wiringCanvas
-            wiringCanvas.requestPaint()
+            // 重新绘制LED网格
+            wiringCanvas.requestPaint();
         } else {
-            scrollAnimation.stop()
+            scrollAnimation.stop();
         }
     }
 
     // 确保初始位置正确
     Component.onCompleted: {
-        textContainer.x = animationPreviewArea.width
-        // 初始绘制wiringCanvas
-        wiringCanvas.requestPaint()
+        calculateGridParameters();
+        textContainer.x = textContainerStartX;
+        // 初始绘制LED网格
+        wiringCanvas.requestPaint();
     }
 
-    // 监听quickWiringConfig变化
+    // 监听相关变化
     onQuickWiringConfigChanged: {
+        calculateGridParameters();
         if (wiringCanvas) {
-            wiringCanvas.requestPaint()
+            wiringCanvas.requestPaint();
         }
+    }
+
+    onTextColorChanged: wiringCanvas.requestPaint();
+    onUseGradientChanged: wiringCanvas.requestPaint();
+    onGradientStopsChanged: wiringCanvas.requestPaint();
+    onPreviewScaleChanged: {
+        calculateGridParameters();
+        wiringCanvas.requestPaint();
+    }
+
+    // 监听预览区域大小变化
+    onWidthChanged: {
+        calculateGridParameters();
+        wiringCanvas.requestPaint();
+    }
+    onHeightChanged: {
+        calculateGridParameters();
+        wiringCanvas.requestPaint();
     }
 }
