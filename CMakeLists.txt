@@ -21,7 +21,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # 添加可执行目标
 add_executable(LedPlayer
     src/utils/charbitmapgenerator.h
-    src/utils/charbitmapgenerator.cpp)
+    src/utils/charbitmapgenerator.cpp
+    src/utils/FileHandler.h)
 
 # 设置目标属性
 set_target_properties(LedPlayer PROPERTIES

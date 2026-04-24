@@ -1190,33 +1190,86 @@ Window {
                                 console.log("属性变更: " + name + " = " + value);
 
                                 switch (name) {
-                                    case "text":
-                                        animationText = value;
-                                        textContentChanged(value);
-                                        // 文本变化，标记缓存为脏
-                                        isCharBitmapCacheDirty = true;
-                                        break;
-                                    case "gridWidth":
-                                        if (quickWiringConfig) {
-                                            quickWiringConfig.width = value;
-                                        }
-                                        break;
-                                    case "gridHeight":
-                                        if (quickWiringConfig) {
-                                            quickWiringConfig.height = value;
-                                        }
-                                        break;
-                                    case "fontName":
-                                        fontNameProperty = value;
-                                        // 字体变化，标记缓存为脏
-                                        isCharBitmapCacheDirty = true;
-                                        break;
-                                    case "fontSize":
-                                        fontSizeProperty = value;
-                                        // 字号变化，标记缓存为脏
-                                        isCharBitmapCacheDirty = true;
-                                        break;
-                                }
+                                        case "text":
+                                            animationText = value;
+                                            textContentChanged(value);
+                                            isCharBitmapCacheDirty = true;
+                                            break;
+                                        case "gridWidth":
+                                            if (quickWiringConfig) {
+                                                quickWiringConfig.width = value;
+                                            }
+                                            calculateGridParameters();  // 网格尺寸变化需重新计算布局
+                                            break;
+                                        case "gridHeight":
+                                            if (quickWiringConfig) {
+                                                quickWiringConfig.height = value;
+                                            }
+                                            calculateGridParameters();
+                                            break;
+                                        case "ledSize":
+                                            // 假设存在 ledSizeProperty 变量
+                                            ledSizeProperty = value;
+                                            break;
+                                        case "brightness":
+                                            brightnessLevel = value;  // 例如 brightnessLevel
+                                            break;
+                                        case "fontName":
+                                            fontNameProperty = value;
+                                            isCharBitmapCacheDirty = true;
+                                            break;
+                                        case "fontSize":
+                                            fontSizeProperty = value;
+                                            isCharBitmapCacheDirty = true;
+                                            break;
+                                        case "materialName":
+                                            materialNameValue = value;
+                                            break;
+                                        case "startX":
+                                            startXCoord = value;
+                                            break;
+                                        case "startY":
+                                            startYCoord = value;
+                                            break;
+                                        case "materialWidth":
+                                            materialWidthValue = value;
+                                            break;
+                                        case "materialHeight":
+                                            materialHeightValue = value;
+                                            break;
+                                        case "frameCount":
+                                            frameCountValue = value;
+                                            // 更新总帧数显示（如果外部有绑定）
+                                            break;
+                                        case "startFrame":
+                                            startFrameValue = value;
+                                            break;
+                                        case "endFrame":
+                                            endFrameValue = value;
+                                            break;
+                                        case "enterFrame":
+                                            enterFrameValue = value;
+                                            break;
+                                        case "exitFrame":
+                                            exitFrameValue = value;
+                                            break;
+                                        case "repeatCount":
+                                            repeatCountValue = value;
+                                            break;
+                                        case "blendType":
+                                            blendTypeValue = value;
+                                            break;
+                                        case "mirrorMode":
+                                            mirrorModeValue = value;
+                                            break;
+                                        case "horizontalSections":
+                                            horizontalSectionsValue = value;
+                                            break;
+                                        default:
+                                            console.warn("未处理的属性变更:", name, value);
+                                            break;
+                                    }
+
 
                                 propertyValueChanged(name, value);
                                 calculateGridParameters();
