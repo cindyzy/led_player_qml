@@ -49,4 +49,4 @@ install(TARGETS LedPlayer
     BUNDLE DESTINATION .
     LIBRARY DESTINATION lib
 )
-add_subdirectory(examples/DMX512Demo)
+# add_subdirectory(examples/DMX512Demo)

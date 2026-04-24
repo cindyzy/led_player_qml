@@ -9,14 +9,21 @@ find_package(Qt6 REQUIRED COMPONENTS Quick)
 qt_standard_project_setup(REQUIRES 6.10)
 
 qt_add_executable(appDMX512Demo
-    main.cpp
+    Main.cpp
 )
 
+
+# 添加 QML 资源文件
 qt_add_qml_module(appDMX512Demo
     URI DMX512Demo
     QML_FILES
         Main.qml
+    SOURCES dmxcontroller.h dmxcontroller.cpp
 )
+
+# qt_add_resources(appDMX512Demo "qml"
+#     FILES qml.qrc
+# )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

@@ -94,7 +94,7 @@ Window {
     // CharBitmapGenerator实例
     property var charBitmapGenerator: null
     property bool charGeneratorReady: false
-    property bool useCppCharGenerator: true
+    property bool useCppCharGenerator: false
 
     // 内部属性
     property string animationText: "LED文字效果"
@@ -883,6 +883,7 @@ Window {
                     spacing: 20
 
                     Button {
+                        id:playbtn
                         text: previewPlaying ? "暂停" : "预览"
                         Layout.preferredWidth: 60
                         Layout.preferredHeight: 25
