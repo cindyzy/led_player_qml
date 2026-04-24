@@ -6,7 +6,7 @@ import "."
 import "views"
 import "dialogs"
 import "utils"
-
+import "components"
 ApplicationWindow {
     id: mainWindow
     width: 1400
@@ -15,8 +15,8 @@ ApplicationWindow {
     title: "LED Player 3"
     minimumWidth: 1024
     minimumHeight: 768
-    menuBar: MenuBarArea{
-    }
+    // menuBar: MenuBarArea{
+    // }
 
 
     // 应用图标
@@ -32,7 +32,7 @@ ApplicationWindow {
     // 主界面
     MainLayout {
         id: mainLayout
-        // anchors.fill: parent
+        anchors.fill: parent
     }
     // 新建项目对话框
     NewProjectDialog {
@@ -51,6 +51,7 @@ ApplicationWindow {
     {
         id:animationEditorDialog
     }
+    MessageDialog { id: messageDialog }
     // CharBitmapGenerator
     // {
     //     id:charBitmapGenerator
@@ -61,6 +62,14 @@ ApplicationWindow {
         target: quickWiringDialog
         function onQuickWiringConfirmed(config) {
             mainLayout.applyQuickWiringPreview(config)
+        }
+    }
+    
+    // 连接动画编辑器的素材准备信号
+    Connections {
+        target: animationEditorDialog
+        function onMaterialReady(materialData) {
+            mainLayout.handleMaterialReady(materialData)
         }
     }
     // 快捷键

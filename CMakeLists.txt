@@ -22,7 +22,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 add_executable(LedPlayer
     src/utils/charbitmapgenerator.h
     src/utils/charbitmapgenerator.cpp
-    src/utils/FileHandler.h)
+    src/utils/filehelper.h src/utils/filehelper.cpp
+)
 
 # 设置目标属性
 set_target_properties(LedPlayer PROPERTIES
@@ -50,4 +51,3 @@ install(TARGETS LedPlayer
     BUNDLE DESTINATION .
     LIBRARY DESTINATION lib
 )
-# add_subdirectory(examples/DMX512Demo)

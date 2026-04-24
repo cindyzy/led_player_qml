@@ -10,20 +10,7 @@ Rectangle {
     visible: true
     // title: "LED Player 3"
 
-        // 主内容区域（占位符）
-        Rectangle {
-            anchors.fill: parent
-            anchors.topMargin: 30
-            color: "#1E1E1E"
-
-            Text {
-                anchors.centerIn: parent
-                text: "LED Player 3 主界面\n菜单栏已完整实现\n基于5张截图整合"
-                color: "#CCCCCC"
-                font.pixelSize: 24
-                horizontalAlignment: Text.AlignHCenter
-            }
-        }
+    // 主内容区域（已移除占位符，使用实际布局）
     // 暗色主题
     // palette.window: "#1E1E1E"
     // palette.base: "#252526"
@@ -35,19 +22,29 @@ Rectangle {
     function applyQuickWiringPreview(config) {
         previewArea.applyQuickWiringPreview(config)
     }
-
+    function handleMaterialReady(materialData)
+    {
+        playlistPanel.handleMaterialReady(materialData)
+    }
+    
+    function saveProject()
+    {
+        playlistPanel.saveProject()
+    }
     ColumnLayout {
+        id:mainWindowColumnLayout
         anchors.fill: parent
         spacing: 0
 
         // 1. 菜单栏
-        // MenuBarArea {
-        //     Layout.fillWidth: true
-        //     Layout.preferredHeight: 30
-        // }
+        MenuBarArea {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 30
+        }
 
         // 2. 主内容区域
         SplitView {
+            id:mainWindowArea
             Layout.fillWidth: true
             Layout.fillHeight: true
             orientation: Qt.Horizontal

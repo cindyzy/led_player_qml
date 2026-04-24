@@ -122,7 +122,27 @@ Window {
     signal charGeneratorInitialized(bool success, string mode)
     signal charBitmapLoaded(string ledchar, var bitmap)
     signal charBitmapsSaved(string directory, int count)
+    signal materialReady(var materialData)
 
+    signal animationAccepted(variant animationData)
+
+
+    property string ledSizeProperty: "70%"
+    property string brightnessLevel: "高"
+    property string materialNameValue: "LED文字效果"
+    property int startXCoord: 0
+    property int startYCoord: 0
+    property int materialWidthValue: 60
+    property int materialHeightValue: 270
+    property int frameCountValue: 80
+    property int startFrameValue: 1
+    property int endFrameValue: 80
+    property int enterFrameValue: 1
+    property int exitFrameValue: 80
+    property int repeatCountValue: 1
+    property string blendTypeValue: "黑色透明"
+    property string mirrorModeValue: "复制"
+    property int horizontalSectionsValue: 1
     // 初始化CharBitmapGenerator
     function initCharBitmapGenerator() {
         console.log("正在初始化CharBitmapGenerator...");
@@ -1239,7 +1259,7 @@ Window {
                                             break;
                                         case "frameCount":
                                             frameCountValue = value;
-                                            // 更新总帧数显示（如果外部有绑定）
+
                                             break;
                                         case "startFrame":
                                             startFrameValue = value;
@@ -1271,7 +1291,7 @@ Window {
                                     }
 
 
-                                propertyValueChanged(name, value);
+                                // propertyValueChanged(name, value);
                                 calculateGridParameters();
                                 wiringCanvas.requestPaint();
                             }
@@ -1498,7 +1518,7 @@ Window {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 100
                 title: "动画时间轴"
-                totalFrames: 120
+                totalFrames: frameCountValue
                 totalDurationMs: 6000
                 currentFrame: 1
                 tickInterval: 10
@@ -1568,8 +1588,45 @@ Window {
                             verticalAlignment: Text.AlignVCenter
                         }
                         onClicked: {
-                            // 保存设置并关闭
-                            animationEditorDialog.close()
+                            // 生成素材库数据
+                            var materialData = {
+                                name: materialNameValue,
+                                type: "led_animation",
+                                duration: 4.0, // 4秒
+                                properties: {
+                                    text: animationText,
+                                    fontSize: fontSizeProperty,
+                                    fontName: fontNameProperty,
+                                    textColor: textColor,
+                                    useGradient: useGradient,
+                                    gradientStops: gradientStops,
+                                    ledSize: ledSizeProperty,
+                                    brightness: brightnessLevel,
+                                    startX: startXCoord,
+                                    startY: startYCoord,
+                                    width: materialWidthValue,
+                                    height: materialHeightValue,
+                                    frameCount: frameCountValue,
+                                    startFrame: startFrameValue,
+                                    endFrame: endFrameValue,
+                                    enterFrame: enterFrameValue,
+                                    exitFrame: exitFrameValue,
+                                    repeatCount: repeatCountValue,
+                                    blendType: blendTypeValue,
+                                    mirrorMode: mirrorModeValue,
+                                    horizontalSections: horizontalSectionsValue,
+                                    wiringConfig: quickWiringConfig
+                                },
+                                charBitmaps: currentCharBitmaps
+                            }
+                            
+                            console.log("生成素材库数据:", materialData.name);
+                            
+                            // 发送素材库数据信号
+                            materialReady(materialData);
+                            
+                            // 关闭对话框
+                            animationEditorDialog.close();
                         }
                     }
                 }

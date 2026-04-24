@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 19.0.0, 2026-04-23T18:24:46. -->
+<!-- Written by QtCreator 19.0.0, 2026-04-24T15:21:59. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -248,7 +248,7 @@
      <value type="QString" key="PerfRecordArgsId">-e cpu-cycles --call-graph &quot;dwarf,4096&quot; -F 250</value>
      <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
      <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.</value>
-     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">appDMX512Demo</value>
+     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">corelib</value>
      <value type="bool" key="ProjectExplorer.RunConfiguration.Customized">false</value>
      <value type="QString" key="ProjectExplorer.RunConfiguration.UniqueId"></value>
      <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
@@ -341,7 +341,7 @@
     <value type="QString" key="PerfRecordArgsId">-e cpu-cycles --call-graph &quot;dwarf,4096&quot; -F 250</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">appDMX512Demo</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">corelib</value>
     <value type="bool" key="ProjectExplorer.RunConfiguration.Customized">false</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.UniqueId"></value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>

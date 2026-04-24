@@ -4,7 +4,7 @@
 #include <QQmlContext>
 #include <QDir>
 #include "../utils/charbitmapgenerator.h"
-#include "../utils/FileHandler.h"
+#include "../utils/filehelper.h"
 #include <QQmlContext>
 #include <QDebug>
 #include <QStandardPaths>
@@ -25,8 +25,10 @@ int main(int argc, char *argv[])
     app.setWindowIcon(QIcon(":/images/icon.png"));
     // 注册C++组件
     qmlRegisterType<CharBitmapGenerator>("LedPlayer", 1, 0, "CharBitmapGenerator");
-    qmlRegisterType<FileHandler>("com.example", 1, 0, "FileHandler");
+    qmlRegisterType<FileHelper>("LedPlayer", 1, 0, "FileHelper");
+
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("fileHelper", new FileHelper(&engine));
     // 创建并暴露全局实例
     // CharBitmapGenerator* charGenerator = new CharBitmapGenerator(&app);
 

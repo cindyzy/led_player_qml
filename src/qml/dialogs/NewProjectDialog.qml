@@ -3,17 +3,18 @@ import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.platform 1.1 as Platform
+import QtQuick.Window 2.15
 
-Popup {
+Window {
     id: newProjectDialog
-    modal: true
-    focus: true
     width: 600
     height: 450
-    x: (parent ? parent.width/2 - width/2 : 0)
-    y: (parent ? parent.height/2 - height/2 : 0)
-    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+    title: "新建项目"
+    modality: Qt.ApplicationModal      // 模态窗口
+    flags: Qt.Dialog | Qt.FramelessWindowHint  // 无边框，自定义标题栏
+    color: "#00000000"                 // 透明背景，内容由主矩形绘制
 
+    // 对外属性（与原 Popup 保持一致）
     property string projectName: "新建项目2"
     property int projectWidth: 192
     property int projectHeight: 144
@@ -21,52 +22,40 @@ Popup {
     property int selectedTabIndex: 0
     property int selectedRecentProjectIndex: 0
 
+    // 信号
+    signal accepted()
+    signal rejected()
+
     // 拖动相关属性
     property bool dragging: false
     property point startDragPos: Qt.point(0, 0)
 
-    signal accepted()
+    // 组件初始化：窗口居中显示
+    Component.onCompleted: {
+        // 居中于屏幕
+        x = (Screen.width - width) / 2
+        y = (Screen.height - height) / 2
+    }
+    // 新信号：携带项目信息对象
+    signal accepted(var projectInfo)
+
+    // 原有的 rejected 信号保持不变
     signal rejected()
 
-    Material.theme: Material.Dark
+    // 内部错误对话框（仍然使用 Dialog 或改为自定义窗口，此处保留 Dialog 以简化）
+    Dialog {
+        id: errorDialog
+        title: "输入错误"
+        modal: true
+        width: 300
+        height: 150
+        standardButtons: Dialog.Ok
+        property string errorMessage: ""
 
-    // 最近项目列表数据
-    ListModel {
-        id: recentProjectsModel
-        ListElement {
-            name: "新建项目1"
-            path: "D:\\LED_Player_3.2.12_绿色免安装_20230419\\新建项目1"
-            date: "2023-04-19 10:30:00"
-        }
-        ListElement {
-            name: "示例项目1"
-            path: "D:\\LED_Player_3.2.12_绿色免安装_20230419\\示例项目1"
-            date: "2023-04-18 15:45:00"
-        }
-        ListElement {
-            name: "演示项目"
-            path: "D:\\LED_Player_3.2.12_绿色免安装_20230419\\演示项目"
-            date: "2023-04-17 09:20:00"
-        }
-    }
-
-    // 示例项目列表数据
-    ListModel {
-        id: exampleProjectsModel
-        ListElement {
-            name: "LED显示屏示例"
-            description: "标准LED显示屏配置示例"
-            type: "SY系列控制器"
-        }
-        ListElement {
-            name: "舞台灯光示例"
-            description: "舞台灯光控制系统示例"
-            type: "TM1804芯片"
-        }
-        ListElement {
-            name: "建筑亮化示例"
-            description: "建筑外立面灯光效果示例"
-            type: "WS2812芯片"
+        Text {
+            anchors.centerIn: parent
+            text: errorDialog.errorMessage
+            color: "white"
         }
     }
 
@@ -82,20 +71,24 @@ Popup {
         }
     }
 
-    // 主内容区域
+    // 主内容区域（黑色背景圆角面板）
     Rectangle {
         id: mainContent
         anchors.fill: parent
         color: "#1e1e1e"
+        radius: 4
+        border.color: "#404040"
+        border.width: 1
 
-        // 对话框标题栏
+        // 自定义标题栏（可拖动）
         Rectangle {
             id: titleBar
             width: parent.width
             height: 40
             color: "#2d2d2d"
-            border.color: "#404040"
-            border.width: 1
+            radius: 4
+            // 只保留顶部圆角
+            clip: true
 
             // 拖动区域
             MouseArea {
@@ -163,6 +156,7 @@ Popup {
             }
         }
 
+        // 内容区域布局
         ColumnLayout {
             anchors.top: titleBar.bottom
             anchors.left: parent.left
@@ -171,7 +165,7 @@ Popup {
             anchors.margins: 20
             spacing: 15
 
-            // 第一行：项目名称
+            // 第一行：项目名称 + 宽高
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -205,7 +199,6 @@ Popup {
                     }
                 }
 
-                // 宽度设置
                 RowLayout {
                     spacing: 5
 
@@ -239,7 +232,6 @@ Popup {
                     }
                 }
 
-                // 高度设置
                 RowLayout {
                     spacing: 5
 
@@ -331,12 +323,11 @@ Popup {
                 Layout.fillHeight: true
                 spacing: 5
 
-                // 标签页头
                 TabBar {
                     id: tabBar
                     Layout.fillWidth: true
                     currentIndex: selectedTabIndex
-
+background: "black"
                     onCurrentIndexChanged: {
                         selectedTabIndex = currentIndex
                     }
@@ -344,15 +335,11 @@ Popup {
                     TabButton {
                         text: "最近项目"
                         width: implicitWidth
-
                         background: Rectangle {
                             color: parent.checked ? "#2d2d2d" : "transparent"
                             border.color: "#404040"
                             border.width: parent.checked ? 1 : 0
-                            // border.topLeftRadius: 5
-                            // border.topRightRadius: 5
                         }
-
                         contentItem: Text {
                             text: parent.text
                             color: parent.checked ? Material.accent : "white"
@@ -364,15 +351,11 @@ Popup {
                     TabButton {
                         text: "示例"
                         width: implicitWidth
-
                         background: Rectangle {
                             color: parent.checked ? "#2d2d2d" : "transparent"
                             border.color: "#404040"
                             border.width: parent.checked ? 1 : 0
-                            // border.topLeftRadius: 5
-                            // border.topRightRadius: 5
                         }
-
                         contentItem: Text {
                             text: parent.text
                             color: parent.checked ? Material.accent : "white"
@@ -382,7 +365,6 @@ Popup {
                     }
                 }
 
-                // 标签页内容
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -404,7 +386,23 @@ Popup {
                             clip: true
                             spacing: 8
 
-                            model: recentProjectsModel
+                            model: ListModel {
+                                ListElement {
+                                    name: "新建项目1"
+                                    path: "D:\\LED_Player_3.2.12_绿色免安装_20230419\\新建项目1"
+                                    date: "2023-04-19 10:30:00"
+                                }
+                                ListElement {
+                                    name: "示例项目1"
+                                    path: "D:\\LED_Player_3.2.12_绿色免安装_20230419\\示例项目1"
+                                    date: "2023-04-18 15:45:00"
+                                }
+                                ListElement {
+                                    name: "演示项目"
+                                    path: "D:\\LED_Player_3.2.12_绿色免安装_20230419\\演示项目"
+                                    date: "2023-04-17 09:20:00"
+                                }
+                            }
 
                             delegate: Rectangle {
                                 width: ListView.view.width
@@ -419,14 +417,12 @@ Popup {
                                     anchors.margins: 10
                                     spacing: 15
 
-                                    // 项目图标
                                     Rectangle {
                                         width: 40
                                         height: 40
                                         radius: 5
                                         color: Material.Blue
                                         opacity: 0.7
-
                                         Text {
                                             text: "P"
                                             anchors.centerIn: parent
@@ -436,7 +432,6 @@ Popup {
                                         }
                                     }
 
-                                    // 项目信息
                                     ColumnLayout {
                                         Layout.fillWidth: true
                                         Layout.fillHeight: true
@@ -448,7 +443,6 @@ Popup {
                                             font.bold: true
                                             font.pixelSize: 13
                                         }
-
                                         Text {
                                             text: path
                                             color: "gray"
@@ -456,7 +450,6 @@ Popup {
                                             elide: Text.ElideLeft
                                             Layout.fillWidth: true
                                         }
-
                                         Text {
                                             text: "修改时间: " + date
                                             color: "#888888"
@@ -469,7 +462,7 @@ Popup {
                                     anchors.fill: parent
                                     onClicked: {
                                         selectedRecentProjectIndex = index
-                                        var project = recentProjectsModel.get(index)
+                                        var project = recentProjectsList.model.get(index)
                                         projectName = project.name
                                         projectPath = project.path.substring(0, project.path.lastIndexOf("\\"))
                                         projectNameField.text = projectName
@@ -494,7 +487,23 @@ Popup {
                             clip: true
                             spacing: 8
 
-                            model: exampleProjectsModel
+                            model: ListModel {
+                                ListElement {
+                                    name: "LED显示屏示例"
+                                    description: "标准LED显示屏配置示例"
+                                    type: "SY系列控制器"
+                                }
+                                ListElement {
+                                    name: "舞台灯光示例"
+                                    description: "舞台灯光控制系统示例"
+                                    type: "TM1804芯片"
+                                }
+                                ListElement {
+                                    name: "建筑亮化示例"
+                                    description: "建筑外立面灯光效果示例"
+                                    type: "WS2812芯片"
+                                }
+                            }
 
                             delegate: Rectangle {
                                 width: ListView.view.width
@@ -509,14 +518,12 @@ Popup {
                                     anchors.margins: 10
                                     spacing: 15
 
-                                    // 项目图标
                                     Rectangle {
                                         width: 40
                                         height: 40
                                         radius: 5
                                         color: Material.Green
                                         opacity: 0.7
-
                                         Text {
                                             text: "E"
                                             anchors.centerIn: parent
@@ -526,7 +533,6 @@ Popup {
                                         }
                                     }
 
-                                    // 项目信息
                                     ColumnLayout {
                                         Layout.fillWidth: true
                                         Layout.fillHeight: true
@@ -538,7 +544,6 @@ Popup {
                                             font.bold: true
                                             font.pixelSize: 13
                                         }
-
                                         Text {
                                             text: description
                                             color: "gray"
@@ -546,7 +551,6 @@ Popup {
                                             elide: Text.ElideLeft
                                             Layout.fillWidth: true
                                         }
-
                                         Text {
                                             text: "控制器类型: " + type
                                             color: "#888888"
@@ -554,7 +558,6 @@ Popup {
                                         }
                                     }
 
-                                    // 使用按钮
                                     Button {
                                         text: "使用"
                                         Material.background: Material.Green
@@ -562,10 +565,9 @@ Popup {
                                         Layout.preferredWidth: 60
 
                                         onClicked: {
-                                            var example = exampleProjectsModel.get(index)
+                                            var example = exampleProjectsList.model.get(index)
                                             projectName = example.name
                                             projectNameField.text = projectName
-                                            // 在实际应用中，这里会加载示例项目配置
                                             console.log("使用示例项目:", example.name)
                                         }
                                     }
@@ -586,7 +588,6 @@ Popup {
                     anchors.fill: parent
                     spacing: 10
 
-                    // 左侧按钮
                     RowLayout {
                         spacing: 10
 
@@ -597,7 +598,6 @@ Popup {
 
                             onClicked: {
                                 console.log("创建MapTools4项目")
-                                // 这里可以添加MapTools4项目的特殊逻辑
                             }
 
                             background: Rectangle {
@@ -609,7 +609,6 @@ Popup {
                         }
                     }
 
-                    // 右侧按钮
                     RowLayout {
                         Layout.alignment: Qt.AlignRight
                         spacing: 10
@@ -626,15 +625,29 @@ Popup {
                                     errorDialog.open()
                                     return
                                 }
-
                                 if (projectPath.trim() === "") {
                                     errorDialog.errorMessage = "请选择项目路径"
                                     errorDialog.open()
                                     return
                                 }
 
-                                newProjectDialog.accepted()
+                                // 构造项目信息对象
+                                var projectInfo = {
+                                    "name": projectName,
+                                    "width": projectWidth,
+                                    "height": projectHeight,
+                                    "path": projectPath,
+                                    "selectedTabIndex": selectedTabIndex,
+                                    "selectedRecentProjectIndex": selectedRecentProjectIndex
+                                    // 您还可以添加其他需要的字段
+                                }
+
+                                // 发射信号，将参数传递给外部
+                                newProjectDialog.accepted(projectInfo)
+
+                                // 关闭窗口
                                 newProjectDialog.close()
+                                // 原代码中引用的 hardwareSettingsDialog 需要进行相应实例化或注释
                                 hardwareSettingsDialog.open()
                             }
 
@@ -653,7 +666,6 @@ Popup {
 
                             onClicked: {
                                 console.log("导入项目")
-                                // 这里可以打开导入项目对话框
                             }
 
                             background: Rectangle {
@@ -684,27 +696,6 @@ Popup {
                     }
                 }
             }
-        }
-    }
-
-    // 错误提示对话框
-    Dialog {
-        id: errorDialog
-        title: "输入错误"
-        modal: true
-        width: 300
-        height: 150
-        x: (newProjectDialog.parent ? newProjectDialog.parent.width/2 - width/2 : 0)
-        y: (newProjectDialog.parent ? newProjectDialog.parent.height/2 - height/2 : 0)
-        standardButtons: Dialog.Ok
-
-        property string errorMessage: ""
-
-        Text {
-            id: errorText
-            anchors.centerIn: parent
-            text: errorDialog.errorMessage
-            color: "white"
         }
     }
 }

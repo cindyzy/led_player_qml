@@ -30,5 +30,6 @@
         <file>components/animationEditor/PlaybackPanel.qml</file>
         <file>utils/CharBitmapGenerator.qml</file>
         <file>qmldir</file>
+        <file>components/MessageDialog.qml</file>
     </qresource>
 </RCC>

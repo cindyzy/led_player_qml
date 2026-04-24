@@ -568,8 +568,46 @@ Rectangle {
     // 添加炫彩文字
     function addColorfulText(programIndex, windowIndex) {
         console.log("添加炫彩文字到视窗:", programIndex, windowIndex)
+        // 保存当前的节目和视窗索引
+        currentProgramIndex = programIndex
+        currentWindowIndex = windowIndex
+        // 显示动画编辑器
         animationEditorDialog.show()
         animationEditorDialog.quickWiringConfig=previewArea.quickWiringConfig
+    }
+    
+    // 保存当前操作的节目和视窗索引
+    property int currentProgramIndex: -1
+    property int currentWindowIndex: -1
+    
+    // 处理动画编辑器返回的素材库数据
+    function handleMaterialReady(materialData) {
+        console.log("收到素材库数据:", materialData.name)
+        
+        // 检查节目和视窗索引是否有效
+        if (currentProgramIndex >= 0 && currentProgramIndex < playlistData.length) {
+            var program = playlistData[currentProgramIndex]
+            if (currentWindowIndex >= 0 && currentWindowIndex < program.children.length) {
+                var window = program.children[currentWindowIndex]
+                
+                // 添加素材到视窗的子项
+                window.children.push({
+                    name: materialData.name,
+                    type: materialData.type,
+                    duration: materialData.duration + "s",
+                    properties: materialData.properties
+                })
+                
+                // 触发UI更新
+                playlistData = playlistData.slice()
+                
+                console.log("素材已添加到视窗:", window.name)
+            }
+        }
+        
+        // 重置索引
+        currentProgramIndex = -1
+        currentWindowIndex = -1
     }
 
     // 添加屏幕录制
@@ -664,6 +702,59 @@ Rectangle {
                 // 触发UI更新
                 playlistData = playlistData.slice()
             }
+        }
+    }
+    
+    // 保存项目
+    function saveProject() {
+        var projectData = {
+            name: currentPlaylistName,
+            version: "1.0",
+            saveDate: new Date().toISOString(),
+            playlistData: playlistData
+        };
+        var projectJson = JSON.stringify(projectData, null, 2);
+
+        var defaultFileName = currentPlaylistName.replace(/[^a-zA-Z0-9]/g, "_") + ".sproj";
+        var saveDir = Qt.application.dataPath + "/projects/";
+        var savePath = saveDir + defaultFileName;
+
+        // 确保目录存在
+        var dirError = fileHelper.ensureDirectoryExists(saveDir);
+        if (dirError !== "") {
+            console.error("创建目录失败:", dirError);
+            messageDialog.error("保存失败", "无法创建保存目录:\n" + dirError);
+            return;
+        }
+
+        // 保存文件
+        var errorMsg = fileHelper.saveTextFile(savePath, projectJson);
+        if (errorMsg === "") {
+            console.log("项目保存成功:", savePath);
+            messageDialog.success("保存成功", "项目已保存到:\n" + savePath);
+        } else {
+            console.error("保存失败:", errorMsg);
+            messageDialog.error("保存失败", errorMsg);
+        }
+    }
+    function loadProject(filePath) {
+        var errorMsg = "";
+        var content = fileHelper.readTextFile(filePath, errorMsg);
+        if (errorMsg !== "") {
+            console.error("读取失败:", errorMsg);
+            messageDialog.error("打开失败", errorMsg);
+            return;
+        }
+
+        try {
+            var projectData = JSON.parse(content);
+            // 恢复播放列表数据
+            currentPlaylistName = projectData.name;
+            playlistData = projectData.playlistData;
+            console.log("项目加载成功");
+        } catch (e) {
+            console.error("JSON解析失败:", e);
+            messageDialog.error("格式错误", "项目文件损坏或版本不兼容");
         }
     }
 }
