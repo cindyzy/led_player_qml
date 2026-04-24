@@ -71,9 +71,13 @@ private:
     QVariantList renderCharBitmap(QChar ch, int fontSize, const QString& fontFamily);
 
     // 计算单元格的平均亮度
+    // float calculateCellBrightness(const QImage& image,
+    //                               int cellX, int cellY,
+    //                               int cellWidth, int cellHeight) const;
     float calculateCellBrightness(const QImage& image,
                                   int cellX, int cellY,
-                                  int cellWidth, int cellHeight) const;
+                                  qreal cellWidth, qreal cellHeight) const;
+
 
     // 生成缓存键
     QString generateCacheKey(QChar ch, int fontSize, const QString& fontFamily) const;

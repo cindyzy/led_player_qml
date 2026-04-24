@@ -1,11 +1,12 @@
 #include "CharBitmapGenerator.h"
-#include <QElapsedTimer>
 #include <QStandardPaths>
 #include <QDateTime>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QRegularExpression>  // 包含QRegularExpression头文件
+#include <QRegularExpression>
+#include <QRectF>
+#include <QPainterPath>
 
 CharBitmapGenerator::CharBitmapGenerator(QObject *parent)
     : QObject(parent)
@@ -15,7 +16,7 @@ CharBitmapGenerator::CharBitmapGenerator(QObject *parent)
     , m_threshold(30)
     , m_enableDebug(false)
     , m_debugPath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/debug_images")
-    , m_canvasScaleFactor(4)
+    , m_canvasScaleFactor(8)  // 增加缩放因子以提高精度
 {
     qDebug() << "CharBitmapGenerator created";
     qDebug() << "Debug path:" << m_debugPath;
@@ -40,8 +41,6 @@ QVariantList CharBitmapGenerator::getCharBitmap(const QString& text,
         return QVariantList();
     }
 
-    QElapsedTimer timer;
-    timer.start();
 
     QChar ch = text.at(0);
     QString cacheKey = generateCacheKey(ch, fontSize, fontFamily);
@@ -49,7 +48,6 @@ QVariantList CharBitmapGenerator::getCharBitmap(const QString& text,
     {
         QMutexLocker locker(&m_cacheMutex);
         if (m_bitmapCache.contains(cacheKey)) {
-            // qDebug() << "Cache hit for key:" << cacheKey;
             return m_bitmapCache[cacheKey];
         }
     }
@@ -61,9 +59,9 @@ QVariantList CharBitmapGenerator::getCharBitmap(const QString& text,
         m_bitmapCache[cacheKey] = bitmap;
     }
 
-    qint64 elapsed = timer.nsecsElapsed();
+
     qDebug() << "Generated char bitmap for" << ch
-             << "in" << (elapsed / 1000000.0) << "ms";
+              << "ms";
 
     emit bitmapGenerated(cacheKey, bitmap);
 
@@ -168,10 +166,8 @@ QVariant CharBitmapGenerator::getLastGeneratedImage() const
 
 QVariantList CharBitmapGenerator::renderCharBitmap(QChar ch, int fontSize, const QString& fontFamily)
 {
-    QElapsedTimer timer;
-    timer.start();
 
-    // 计算画布大小，考虑缩放因子提高精度
+    // 计算画布大小，增加缩放因子提高精度
     int canvasWidth = m_charWidth * m_canvasScaleFactor;
     int canvasHeight = m_charHeight * m_canvasScaleFactor;
 
@@ -194,15 +190,25 @@ QVariantList CharBitmapGenerator::renderCharBitmap(QChar ch, int fontSize, const
     painter.setFont(font);
     painter.setPen(Qt::white);
 
-    // 测量文本大小
-    QFontMetrics metrics(font);
-    QRect textRect = metrics.boundingRect(ch);
+    // 测量文本大小 - 使用更准确的boundingRect
+    QFontMetricsF metrics(font);
+    QRectF boundingRect = metrics.boundingRect(ch);
 
-    // 居中绘制字符
-    int x = (canvasWidth - textRect.width()) / 2;
-    int y = (canvasHeight + metrics.ascent()) / 2;
+    // 计算绘制位置 - 确保字符居中
+    // 使用tightBoundingRect获取更精确的边界
+    QRectF tightRect = metrics.tightBoundingRect(ch);
 
-    painter.drawText(x, y, ch);
+    // 如果tightRect无效，回退到boundingRect
+    if (tightRect.isEmpty()) {
+        tightRect = boundingRect;
+    }
+
+    // 计算居中位置
+    qreal x = (canvasWidth - tightRect.width()) / 2.0 - tightRect.left();
+    qreal y = (canvasHeight - tightRect.height()) / 2.0 - tightRect.top();
+
+    // 绘制字符
+    painter.drawText(QPointF(x, y), QString(ch));
     painter.end();
 
     // 保存最后一次生成的图片
@@ -214,8 +220,8 @@ QVariantList CharBitmapGenerator::renderCharBitmap(QChar ch, int fontSize, const
     }
 
     // 计算每个单元格的大小
-    float cellWidth = static_cast<float>(canvasWidth) / m_charWidth;
-    float cellHeight = static_cast<float>(canvasHeight) / m_charHeight;
+    qreal cellWidth = static_cast<qreal>(canvasWidth) / m_charWidth;
+    qreal cellHeight = static_cast<qreal>(canvasHeight) / m_charHeight;
 
     QVariantList bitmap;
 
@@ -234,35 +240,39 @@ QVariantList CharBitmapGenerator::renderCharBitmap(QChar ch, int fontSize, const
         bitmap.append(QVariant(rowArray));
     }
 
-    qint64 elapsed = timer.nsecsElapsed();
     qDebug() << "Rendered char" << ch
              << "font:" << fontFamily << "size:" << fontSize
-             << "in" << (elapsed / 1000000.0) << "ms";
+             << "tightRect:" << tightRect
+             << "ms";
 
     return bitmap;
 }
 
 float CharBitmapGenerator::calculateCellBrightness(const QImage& image,
                                                    int cellX, int cellY,
-                                                   int cellWidth, int cellHeight) const
+                                                   qreal cellWidth, qreal cellHeight) const
 {
-    int startX = cellX * cellWidth;
-    int endX = (cellX + 1) * cellWidth;
-    int startY = cellY * cellHeight;
-    int endY = (cellY + 1) * cellHeight;
+    int startX = static_cast<int>(cellX * cellWidth);
+    int endX = static_cast<int>((cellX + 1) * cellWidth);
+    int startY = static_cast<int>(cellY * cellHeight);
+    int endY = static_cast<int>((cellY + 1) * cellHeight);
+
+    // 确保边界不超出图像
+    startX = qMax(0, startX);
+    endX = qMin(image.width(), endX);
+    startY = qMax(0, startY);
+    endY = qMin(image.height(), endY);
 
     float totalBrightness = 0;
     int pixelCount = 0;
 
     // 对单元格内的所有像素进行采样
-    for (int y = startY; y < endX; ++y) {
-        for (int x = startX; x < endY; ++x) {
-            if (x >= 0 && x < image.width() && y >= 0 && y < image.height()) {
-                QRgb pixel = image.pixel(x, y);
-                int brightness = qGray(pixel);
-                totalBrightness += brightness;
-                pixelCount++;
-            }
+    for (int y = startY; y < endY; ++y) {
+        for (int x = startX; x < endX; ++x) {
+            QRgb pixel = image.pixel(x, y);
+            int brightness = qGray(pixel);
+            totalBrightness += brightness;
+            pixelCount++;
         }
     }
 
@@ -296,7 +306,7 @@ bool CharBitmapGenerator::saveDebugImage(const QImage& image,
 
     // 生成文件名
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
-    QString fileName = QString("char_%1_font%2_size%3_%4.jpg")
+    QString fileName = QString("char_%1_font%2_size%3_%4.png")
                            .arg(ch)
                            .arg(fontFamily)
                            .arg(fontSize)
@@ -308,14 +318,15 @@ bool CharBitmapGenerator::saveDebugImage(const QImage& image,
 
     QString filePath = m_debugPath + "/" + fileName;
 
-    // 保存图片
-    if (image.save(filePath, "JPG", 90)) {  // 90% 质量
+    // 保存图片为PNG以保持透明度
+    if (image.save(filePath, "PNG", 100)) {
         qDebug() << "Debug image saved to:" << filePath;
         emit debugImageSaved(filePath);
 
         // 同时保存一个JSON文件，记录图片信息
         QJsonObject info;
         info["character"] = QString(ch);
+        info["unicode"] = QString("U+%1").arg(ch);
         info["fontFamily"] = fontFamily;
         info["fontSize"] = fontSize;
         info["charWidth"] = m_charWidth;
@@ -324,6 +335,7 @@ bool CharBitmapGenerator::saveDebugImage(const QImage& image,
         info["antialiasing"] = m_enableAntialiasing;
         info["timestamp"] = timestamp;
         info["imagePath"] = filePath;
+        info["imageSize"] = QString("%1x%2").arg(image.width()).arg(image.height());
 
         QJsonDocument doc(info);
         QString infoFilePath = filePath + ".json";
@@ -407,11 +419,20 @@ bool CharBitmapGenerator::saveBitmapPreviewImage(const QVariantList& bitmap,
         }
     }
 
+    // 添加标题
+    painter.setPen(Qt::white);
+    painter.setFont(QFont("Arial", 10));
+    painter.drawText(5, 15, QString("Char: %1 (U+%2) Font: %3 Size: %4")
+                                .arg(ch)
+                                .arg(ch)
+                                .arg(fontFamily)
+                                .arg(fontSize));
+
     painter.end();
 
     // 保存预览图片
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
-    QString fileName = QString("preview_%1_font%2_size%3_%4.jpg")
+    QString fileName = QString("preview_%1_font%2_size%3_%4.png")
                            .arg(ch)
                            .arg(fontFamily)
                            .arg(fontSize)
@@ -423,7 +444,7 @@ bool CharBitmapGenerator::saveBitmapPreviewImage(const QVariantList& bitmap,
 
     QString filePath = m_debugPath + "/" + fileName;
 
-    if (preview.save(filePath, "JPG", 90)) {
+    if (preview.save(filePath, "PNG", 100)) {
         qDebug() << "Bitmap preview saved to:" << filePath;
         return true;
     }

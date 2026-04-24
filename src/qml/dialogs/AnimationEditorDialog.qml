@@ -1,4 +1,4 @@
-// LED动画编辑器优化版 - 完整集成CharBitmapGenerator
+// LED动画编辑器优化版 - 修复文件保存问题
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -89,12 +89,21 @@ Window {
     property int charWidthLeds: 16
     property int charHeightLeds: 16
     property int spacingCols: 1
+
+    // 新增：点阵缓存
     property var charBitmapCache: ({})
+    property bool isCharBitmapCacheDirty: true
+    property var currentCharBitmaps: []  // 当前文字的点阵数组
 
     // CharBitmapGenerator实例
     property var charBitmapGenerator: null
     property bool charGeneratorReady: false
     property bool useCppCharGenerator: false
+
+    // 文件保存相关
+    property string saveDirectory: ""
+    property string saveStatusMessage: ""
+    property color saveStatusColor: "#AAAAAA"
 
     // 内部属性
     property string animationText: "LED文字效果"
@@ -112,6 +121,7 @@ Window {
     signal exportEffectRequested()
     signal charGeneratorInitialized(bool success, string mode)
     signal charBitmapLoaded(string ledchar, var bitmap)
+    signal charBitmapsSaved(string directory, int count)
 
     // 初始化CharBitmapGenerator
     function initCharBitmapGenerator() {
@@ -148,6 +158,12 @@ Window {
         } else {
             charGeneratorInitialized(false, "None");
         }
+
+        // 初始化后标记缓存为脏
+        isCharBitmapCacheDirty = true;
+
+        // 初始化保存目录
+        initSaveDirectory();
     }
 
     // 创建纯QML版本的CharBitmapGenerator
@@ -179,7 +195,19 @@ Window {
         }
     }
 
-    // 获取字符点阵
+    // 初始化保存目录
+    function initSaveDirectory() {
+        // 使用应用程序数据目录
+        var basePath = Qt.application.dataPath;
+        saveDirectory = basePath + "/char_bitmaps/";
+        console.log("点阵保存目录:", saveDirectory);
+
+        // 更新状态显示
+        saveStatusMessage = "保存目录: " + saveDirectory;
+        saveStatusColor = "#AAAAAA";
+    }
+
+    // 获取字符点阵 - 带缓存版本
     function getCharBitmapDynamic(ledchar, fontSize, fontFamily) {
         if (!charGeneratorReady || !charBitmapGenerator) {
             console.warn("CharBitmapGenerator未初始化，使用备用方案");
@@ -187,9 +215,18 @@ Window {
         }
 
         try {
+            // 生成缓存键
+            var cacheKey = ledchar + "_" + fontSize + "_" + fontFamily;
+
+            // 检查缓存
+            if (charBitmapCache[cacheKey]) {
+                return charBitmapCache[cacheKey];
+            }
+
             var bitmap = charBitmapGenerator.getCharBitmap(ledchar, fontSize, fontFamily);
             if (bitmap && bitmap.length > 0) {
-                // console.log("获取字符点阵成功:", ledchar, "尺寸:", bitmap.length, "x", (bitmap[0] ? bitmap[0].length : 0));
+                // 存入缓存
+                charBitmapCache[cacheKey] = bitmap;
                 charBitmapLoaded(ledchar, bitmap);
                 return bitmap;
             } else {
@@ -282,6 +319,229 @@ Window {
         return bitmap;
     }
 
+    // 将点阵转换为字符串表示
+    function bitmapToString(bitmap) {
+        if (!bitmap || bitmap.length === 0) {
+            return "空点阵";
+        }
+
+        let result = "";
+        for (let i = 0; i < bitmap.length; i++) {
+            let row = bitmap[i];
+            for (let j = 0; j < row.length; j++) {
+                result += (row[j] === 1) ? "██" : "  ";
+            }
+            result += "\n";
+        }
+        return result;
+    }
+
+    // 保存单个字符点阵到文件
+    function saveCharBitmapToFile(ledchar, bitmap, filePath) {
+        var data = "字符: " + ledchar + "\n";
+        data += "点阵尺寸: " + bitmap.length + "x" + (bitmap[0] ? bitmap[0].length : 0) + "\n";
+        data += "点阵数据:\n";
+
+        for (var i = 0; i < bitmap.length; i++) {
+            var row = bitmap[i];
+            for (var j = 0; j < row.length; j++) {
+                data += (row[j] === 1) ? "1" : "0";
+                if (j < row.length - 1) {
+                    data += " ";
+                }
+            }
+            data += "\n";
+        }
+
+        data += "\n点阵可视化:\n";
+        data += bitmapToString(bitmap);
+
+        // 使用Qt的标准文件操作API
+        try {
+            // 创建文件对象
+            var file = new File();
+
+            // 尝试使用FileWriter API
+            file.filePath = filePath;
+
+            // 打开文件进行写入
+            if (file.open(File.WriteOnly | File.Text)) {
+                file.write(data);
+                file.close();
+                console.log("点阵已保存到:", filePath);
+                return true;
+            } else {
+                console.error("无法打开文件进行写入:", filePath);
+                return false;
+            }
+        } catch (error) {
+            console.error("保存文件时出错:", error);
+
+            // 备用方案：输出到控制台
+            console.log("=== 字符点阵数据（文件保存失败，输出到控制台）===");
+            console.log("文件路径:", filePath);
+            console.log(data);
+            console.log("=== 结束 ===");
+
+            return false;
+        }
+    }
+
+    // 预加载当前文本的所有字符点阵
+    function preloadCharBitmaps() {
+        if (animationText.length === 0) {
+            currentCharBitmaps = [];
+            return;
+        }
+
+        currentCharBitmaps = [];
+        console.log("预加载字符点阵，文本长度:", animationText.length);
+
+        for (var i = 0; i < animationText.length; i++) {
+            var ch = animationText.charAt(i);
+            var bitmap = getCharBitmapDynamic(ch, fontSizeProperty, fontNameProperty);
+            if (bitmap) {
+                currentCharBitmaps.push({
+                    char: ch,
+                    bitmap: bitmap
+                });
+                console.log("已加载字符点阵:", ch, "尺寸:", bitmap.length, "x", (bitmap[0] ? bitmap[0].length : 0));
+            } else {
+                console.warn("无法加载字符点阵:", ch);
+                // 添加一个空的占位符
+                currentCharBitmaps.push({
+                    char: ch,
+                    bitmap: null
+                });
+            }
+        }
+
+        console.log("字符点阵预加载完成");
+        isCharBitmapCacheDirty = false;
+    }
+
+    // 保存所有字符点阵到文件
+    function saveAllCharBitmapsToFile() {
+        if (currentCharBitmaps.length === 0) {
+            console.log("没有可保存的字符点阵");
+            saveStatusMessage = "没有可保存的字符点阵";
+            saveStatusColor = "#FFA500";
+            return 0;
+        }
+
+        var savedCount = 0;
+        var timestamp = new Date().getTime();
+
+        for (var i = 0; i < currentCharBitmaps.length; i++) {
+            var item = currentCharBitmaps[i];
+            if (item && item.char && item.bitmap) {
+                var fileName = "char_" + item.char + "_" + fontSizeProperty + "_" + fontNameProperty.replace(/[^a-zA-Z0-9]/g, '_') + "_" + timestamp + ".txt";
+                var filePath = saveDirectory + fileName;
+
+                if (saveCharBitmapToFile(item.char, item.bitmap, filePath)) {
+                    savedCount++;
+                }
+            }
+        }
+
+        // 同时保存一个汇总文件
+        if (savedCount > 0) {
+            var summaryFile = saveDirectory + "summary_" + timestamp + ".txt";
+            saveSummaryFile(summaryFile, savedCount);
+        }
+
+        if (savedCount > 0) {
+            saveStatusMessage = "已保存 " + savedCount + " 个点阵文件到: " + saveDirectory;
+            saveStatusColor = "#00FF00";
+        } else {
+            saveStatusMessage = "保存失败，点阵数据已输出到控制台";
+            saveStatusColor = "#FFA500";
+        }
+
+        console.log("已保存", savedCount, "个字符点阵文件到目录:", saveDirectory);
+        charBitmapsSaved(saveDirectory, savedCount);
+        return savedCount;
+    }
+
+    // 保存汇总文件
+    function saveSummaryFile(filePath, savedCount) {
+        var data = "=== 字符点阵汇总 ===\n";
+        data += "生成时间: " + new Date().toLocaleString() + "\n";
+        data += "字体: " + fontNameProperty + "\n";
+        data += "字号: " + fontSizeProperty + "\n";
+        data += "文本: " + animationText + "\n";
+        data += "点阵尺寸: " + charWidthLeds + "x" + charHeightLeds + "\n";
+        data += "已保存字符数: " + savedCount + "\n\n";
+
+        data += "字符列表:\n";
+        for (var i = 0; i < currentCharBitmaps.length; i++) {
+            var item = currentCharBitmaps[i];
+            if (item && item.char) {
+                data += i + 1 + ". 字符: '" + item.char + "'";
+                if (item.bitmap) {
+                    data += " - 尺寸: " + item.bitmap.length + "x" + (item.bitmap[0] ? item.bitmap[0].length : 0);
+                } else {
+                    data += " - 点阵为空";
+                }
+                data += "\n";
+            }
+        }
+
+        data += "\n=== 点阵预览 ===\n";
+        for (var i = 0; i < currentCharBitmaps.length; i++) {
+            var item = currentCharBitmaps[i];
+            if (item && item.char && item.bitmap) {
+                data += "\n字符: '" + item.char + "'\n";
+                data += bitmapToString(item.bitmap);
+            }
+        }
+
+        // 使用Qt的标准文件操作API
+        try {
+            var file = new File();
+            file.filePath = filePath;
+
+            if (file.open(File.WriteOnly | File.Text)) {
+                file.write(data);
+                file.close();
+                console.log("汇总文件已保存到:", filePath);
+            } else {
+                console.error("无法打开汇总文件进行写入:", filePath);
+
+                // 备用方案：输出到控制台
+                console.log("=== 汇总文件数据（文件保存失败，输出到控制台）===");
+                console.log(data);
+                console.log("=== 结束 ===");
+            }
+        } catch (error) {
+            console.error("保存汇总文件时出错:", error);
+
+            // 备用方案：输出到控制台
+            console.log("=== 汇总文件数据（文件保存失败，输出到控制台）===");
+            console.log(data);
+            console.log("=== 结束 ===");
+        }
+    }
+
+    // 从预加载的点阵中获取字符点阵
+    function getCachedCharBitmap(ledchar, charIndex) {
+        if (isCharBitmapCacheDirty) {
+            console.warn("点阵缓存已过期，重新加载...");
+            preloadCharBitmaps();
+        }
+
+        if (charIndex >= 0 && charIndex < currentCharBitmaps.length) {
+            var item = currentCharBitmaps[charIndex];
+            if (item && item.char === ledchar && item.bitmap) {
+                return item.bitmap;
+            }
+        }
+
+        // 如果缓存中没有，回退到动态获取
+        console.warn("缓存未命中，动态获取字符点阵:", ledchar);
+        return getCharBitmapDynamic(ledchar, fontSizeProperty, fontNameProperty);
+    }
+
     // 计算网格参数
     function calculateGridParameters() {
         if (!quickWiringConfig) return;
@@ -333,6 +593,11 @@ Window {
         if (!previewPlaying && textContainer) {
             textContainer.x = textContainerStartX;
         }
+
+        // 预加载字符点阵
+        if (isCharBitmapCacheDirty) {
+            preloadCharBitmaps();
+        }
     }
 
     // 计算渐变颜色
@@ -374,7 +639,7 @@ Window {
         return gradientStops[gradientStops.length - 1].color;
     }
 
-    // 计算LED颜色
+    // 计算LED颜色 - 优化版本，使用预加载的点阵
     function calculateLedColor(col, row) {
         var text = animationText;
         if (text.length === 0) return "#202020";
@@ -413,7 +678,20 @@ Window {
             // 垂直方向：如果LED行超出字符高度，则不点亮
             if (row >= 0 && row < charHeightLeds) {
                 var ch = text.charAt(charIndex);
-                var bitmap = getCharBitmapDynamic(ch, fontSizeProperty, fontNameProperty);
+
+                // 使用预加载的点阵
+                var bitmap = null;
+                if (currentCharBitmaps.length > charIndex) {
+                    var cachedItem = currentCharBitmaps[charIndex];
+                    if (cachedItem && cachedItem.char === ch && cachedItem.bitmap) {
+                        bitmap = cachedItem.bitmap;
+                    }
+                }
+
+                // 如果缓存中没有，动态获取
+                if (!bitmap) {
+                    bitmap = getCharBitmapDynamic(ch, fontSizeProperty, fontNameProperty);
+                }
 
                 if (bitmap && bitmap[row] && bitmap[row][localCol] === 1) {
                     var progress = charIndex / (text.length - 1);
@@ -445,6 +723,10 @@ Window {
             return;
         }
 
+        // 清空缓存
+        charBitmapCache = {};
+        isCharBitmapCacheDirty = true;
+
         // 测试简单字符
         var testChars = ["L", "E", "D", "A", "B", "C"];
         for (var i = 0; i < testChars.length; i++) {
@@ -471,6 +753,31 @@ Window {
         }
 
         console.log("=== 测试完成 ===");
+    }
+
+    // 开始播放动画
+    function startPreview() {
+        console.log("开始播放动画，预加载字符点阵...");
+
+        // 预加载所有字符点阵
+        preloadCharBitmaps();
+
+        // 重置文字位置
+        if (textContainer) {
+            textContainer.x = textContainerStartX;
+        }
+
+        // 开始播放
+        previewPlaying = true;
+        updateLEDTimer.start();
+        wiringCanvas.requestPaint();
+    }
+
+    // 停止播放动画
+    function stopPreview() {
+        console.log("停止播放动画");
+        previewPlaying = false;
+        updateLEDTimer.stop();
     }
 
     // 主内容容器
@@ -543,6 +850,22 @@ Window {
                     font.pixelSize: 12
                 }
 
+                // 点阵缓存状态
+                Rectangle {
+                    width: 12
+                    height: 12
+                    radius: 6
+                    color: isCharBitmapCacheDirty ? "#FFA500" : "#00FF00"
+                    border.color: "#FFFFFF"
+                    border.width: 1
+                }
+
+                Text {
+                    text: isCharBitmapCacheDirty ? "未缓存" : "已缓存"
+                    color: isCharBitmapCacheDirty ? "#FFA500" : "#00FF00"
+                    font.pixelSize: 12
+                }
+
                 Button {
                     id: testGeneratorBtn
                     text: "测试生成器"
@@ -552,6 +875,60 @@ Window {
 
                     onClicked: {
                         testCharBitmapGenerator();
+                    }
+
+                    background: Rectangle {
+                        color: parent.pressed ? "#4a5568" : "#2b6cb0"
+                        radius: 4
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 12
+                    }
+                }
+
+                Button {
+                    id: reloadCacheBtn
+                    text: "重新加载点阵"
+                    width: 100
+                    height: 30
+                    visible: charGeneratorReady
+
+                    onClicked: {
+                        isCharBitmapCacheDirty = true;
+                        preloadCharBitmaps();
+                        wiringCanvas.requestPaint();
+                    }
+
+                    background: Rectangle {
+                        color: parent.pressed ? "#4a5568" : "#2b6cb0"
+                        radius: 4
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 12
+                    }
+                }
+
+                // 保存点阵按钮
+                Button {
+                    id: saveBitmapsBtn
+                    text: "保存点阵"
+                    width: 80
+                    height: 30
+                    visible: charGeneratorReady
+
+                    onClicked: {
+                        var savedCount = saveAllCharBitmapsToFile();
+                        saveStatusTimer.start();
                     }
 
                     background: Rectangle {
@@ -614,6 +991,18 @@ Window {
                         anchors.top: parent.top
                         anchors.left: parent.left
                         anchors.margins: 10
+                        z: 10
+                    }
+
+                    // 保存状态
+                    Text {
+                        id: saveStatusText
+                        text: saveStatusMessage
+                        color: saveStatusColor
+                        font.pixelSize: 11
+                        anchors.top: parent.top
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.topMargin: 10
                         z: 10
                     }
 
@@ -711,6 +1100,15 @@ Window {
 
                                 // 显示字符生成器状态
                                 ctx.fillText("字符生成器: " + (charGeneratorReady ? "就绪" : "未就绪"), 10, height - 70);
+
+                                // 显示缓存状态
+                                ctx.fillText("点阵缓存: " + (isCharBitmapCacheDirty ? "未就绪" : "已就绪"), 10, height - 90);
+
+                                // 显示保存目录
+                                ctx.fillText("保存目录: " + saveDirectory, 10, height - 110);
+
+                                // 显示保存状态
+                                ctx.fillText("保存状态: " + saveStatusMessage, 10, height - 130);
                             }
                         }
 
@@ -730,7 +1128,7 @@ Window {
                         id: updateLEDTimer
                         interval: 16
                         repeat: true
-                        running: previewPlaying
+                        running: false
                         property real stepDistance: gridCellWidth
                         onTriggered: {
                             if (textContainer) {
@@ -745,6 +1143,17 @@ Window {
                                 // 刷新LED显示
                                 wiringCanvas.requestPaint();
                             }
+                        }
+                    }
+
+                    // 保存状态定时器，5秒后恢复默认状态
+                    Timer {
+                        id: saveStatusTimer
+                        interval: 5000
+                        repeat: false
+                        onTriggered: {
+                            saveStatusMessage = "保存目录: " + saveDirectory;
+                            saveStatusColor = "#AAAAAA";
                         }
                     }
                 }
@@ -784,6 +1193,8 @@ Window {
                                     case "text":
                                         animationText = value;
                                         textContentChanged(value);
+                                        // 文本变化，标记缓存为脏
+                                        isCharBitmapCacheDirty = true;
                                         break;
                                     case "gridWidth":
                                         if (quickWiringConfig) {
@@ -797,9 +1208,13 @@ Window {
                                         break;
                                     case "fontName":
                                         fontNameProperty = value;
+                                        // 字体变化，标记缓存为脏
+                                        isCharBitmapCacheDirty = true;
                                         break;
                                     case "fontSize":
                                         fontSizeProperty = value;
+                                        // 字号变化，标记缓存为脏
+                                        isCharBitmapCacheDirty = true;
                                         break;
                                 }
 
@@ -811,6 +1226,8 @@ Window {
                             onTextChanged: function(newText) {
                                 animationText = newText;
                                 textContentChanged(newText);
+                                // 文本变化，标记缓存为脏
+                                isCharBitmapCacheDirty = true;
                                 calculateGridParameters();
                                 wiringCanvas.requestPaint();
                             }
@@ -883,7 +1300,7 @@ Window {
                     spacing: 20
 
                     Button {
-                        id:playbtn
+                        id: playbtn
                         text: previewPlaying ? "暂停" : "预览"
                         Layout.preferredWidth: 60
                         Layout.preferredHeight: 25
@@ -901,15 +1318,12 @@ Window {
                             verticalAlignment: Text.AlignVCenter
                         }
                         onClicked: {
-                            previewPlaying = !previewPlaying
-                            if (previewPlaying) {
-                                calculateGridParameters();
-                                if (textContainer) {
-                                    textContainer.x = textContainerStartX;
-                                }
-                                updateLEDTimer.start();
+                            if (!previewPlaying) {
+                                // 开始播放，先预加载点阵
+                                startPreview();
                             } else {
-                                updateLEDTimer.stop();
+                                // 停止播放
+                                stopPreview();
                             }
                         }
                     }
@@ -999,6 +1413,12 @@ Window {
                     Text {
                         text: animationText.length + " 字符"
                         color: "#CCCCCC"
+                        font.pixelSize: 12
+                    }
+
+                    Text {
+                        text: "点阵缓存: " + (isCharBitmapCacheDirty ? "未就绪" : "已就绪")
+                        color: isCharBitmapCacheDirty ? "#FFA500" : "#00FF00"
                         font.pixelSize: 12
                     }
 
@@ -1128,12 +1548,9 @@ Window {
             if (textContainer) {
                 textContainer.x = textContainerStartX;
             }
-            if (previewPlaying) {
-                updateLEDTimer.start();
-            }
             wiringCanvas.requestPaint();
         } else {
-            updateLEDTimer.stop();
+            stopPreview();
         }
     }
 
@@ -1158,5 +1575,20 @@ Window {
     onHeightChanged: {
         calculateGridParameters();
         wiringCanvas.requestPaint();
+    }
+
+    // 监听文本变化，标记缓存为脏
+    onAnimationTextChanged: {
+        isCharBitmapCacheDirty = true;
+    }
+
+    // 监听字体变化，标记缓存为脏
+    onFontNamePropertyChanged: {
+        isCharBitmapCacheDirty = true;
+    }
+
+    // 监听字号变化，标记缓存为脏
+    onFontSizePropertyChanged: {
+        isCharBitmapCacheDirty = true;
     }
 }

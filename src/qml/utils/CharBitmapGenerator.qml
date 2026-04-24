@@ -58,7 +58,6 @@ QtObject {
             if (cppGenerator) {
                 cppAvailable = true;
                 console.log("C++ CharBitmapGenerator 创建成功");
-
                 // 连接信号
                 cppGenerator.charWidthChanged.connect(function() {
                     charWidth = cppGenerator.charWidth;
