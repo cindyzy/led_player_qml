@@ -23,6 +23,14 @@ add_executable(LedPlayer
     src/utils/charbitmapgenerator.h
     src/utils/charbitmapgenerator.cpp
     src/utils/filehelper.h src/utils/filehelper.cpp
+    src/core/models/tree/CppTreeModel.h
+    src/core/models/tree/ModelDataAdapter.h
+    src/core/models/tree/treeviewmodel.cpp
+    src/core/models/tree/include/TreeViewListModel.h
+    src/core/models/tree/include/TreeViewListModel.inl
+    src/core/models/tree/include/treeviewmodel.h
+    src/core/models/PlaylistTreeModel.h
+    src/core/models/PlaylistTreeModel.cpp
 )
 
 # 设置目标属性

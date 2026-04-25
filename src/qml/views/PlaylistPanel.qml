@@ -4,6 +4,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQml.Models
 import "../components"
+// import "qrc:/qml/components"
+import LedPlayer
 Rectangle {
     id: playlistPanel
     color: "#252526"
@@ -18,64 +20,165 @@ Rectangle {
     property int contextMenuWindowIndex: -1
     property string contextMenuSelectedItem: ""
 
-    // 属性：播放列表数据
+    // 创建PlaylistTreeModel实例
+    PlaylistTreeModel {
+        id: playlistTreeModel
+        Component.onCompleted: {
+            initializeModel()
+            console.log("PlaylistTreeModel initialized")
+        }
+    }
+
+    // 属性：播放列表数据 - 适配Tree.qml和C++ TreeViewModel
+    // 每个节点包含: TModel_depth(深度), TModel_expend(展开), TModel_hasChildren(有子节点), name, icon, duration, children
+    // 3个节目 x 3个视窗 x 3个素材
     property var playlistData:[
         {
             name: "节目1",
             icon: "📁",
             duration: "10.00s",
-            expanded: true,
+            TModel_depth: 0,
+            TModel_expend: true,
+            TModel_hasChildren: true,
             children: [
                 {
                     name: "视窗1",
                     icon: "🖼",
-                    duration: "5.00s",
-                    expanded: false,
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
                     children: [
-                        {
-                            name: "素材1",
-                            icon: "📄",
-                            duration: "2.50s",
-                            children: []
-                        },
-                        {
-                            name: "素材2",
-                            icon: "📄",
-                            duration: "2.50s",
-                            children: []
-                        }
+                        { name: "素材1-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材1-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材1-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
                     ]
                 },
                 {
                     name: "视窗2",
                     icon: "🖼",
-                    duration: "5.00s",
-                    expanded: false,
-                    children: []
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
+                    children: [
+                        { name: "素材2-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材2-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材2-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
+                    ]
+                },
+                {
+                    name: "视窗3",
+                    icon: "🖼",
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
+                    children: [
+                        { name: "素材3-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材3-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材3-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
+                    ]
                 }
             ]
         },
         {
             name: "节目2",
             icon: "📁",
-            duration: "15.00s",
-            expanded: false,
+            duration: "10.00s",
+            TModel_depth: 0,
+            TModel_expend: true,
+            TModel_hasChildren: true,
             children: [
                 {
                     name: "视窗1",
                     icon: "🖼",
-                    duration: "15.00s",
-                    expanded: false,
-                    children: []
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
+                    children: [
+                        { name: "素材1-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材1-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材1-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
+                    ]
+                },
+                {
+                    name: "视窗2",
+                    icon: "🖼",
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
+                    children: [
+                        { name: "素材2-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材2-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材2-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
+                    ]
+                },
+                {
+                    name: "视窗3",
+                    icon: "🖼",
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
+                    children: [
+                        { name: "素材3-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材3-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材3-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
+                    ]
                 }
             ]
         },
         {
             name: "节目3",
             icon: "📁",
-            duration: "20.00s",
-            expanded: false,
-            children: []
+            duration: "10.00s",
+            TModel_depth: 0,
+            TModel_expend: true,
+            TModel_hasChildren: true,
+            children: [
+                {
+                    name: "视窗1",
+                    icon: "🖼",
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
+                    children: [
+                        { name: "素材1-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材1-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材1-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
+                    ]
+                },
+                {
+                    name: "视窗2",
+                    icon: "🖼",
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
+                    children: [
+                        { name: "素材2-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材2-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材2-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
+                    ]
+                },
+                {
+                    name: "视窗3",
+                    icon: "�",
+                    duration: "3.33s",
+                    TModel_depth: 1,
+                    TModel_expend: true,
+                    TModel_hasChildren: true,
+                    children: [
+                        { name: "素材3-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材3-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
+                        { name: "素材3-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
+                    ]
+                }
+            ]
         }
     ]
 
@@ -245,9 +348,8 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                // 初始化模型数据
-                model:playlistPanel.playlistData
-
+                // 使用PlaylistTreeModel
+                model: playlistTreeModel
                 // 事件处理
                 onItemClicked: function(item, index) {
                     console.log("点击节点:", item.name, "索引:", index)
@@ -260,10 +362,12 @@ Rectangle {
 
                 onItemExpanded: function(item, index) {
                     console.log("展开节点:", item.name, "索引:", index)
+                    playlistTreeModel.expand(index)
                 }
 
                 onItemCollapsed: function(item, index) {
                     console.log("折叠节点:", item.name, "索引:", index)
+                    playlistTreeModel.collapse(index)
                 }
             }
 
@@ -281,17 +385,22 @@ Rectangle {
         // 清空原有数据
         playlistData = []
 
-        // 添加默认的节目1和视窗1
+        // 添加默认的节目1和视窗1 - 适配Tree.qml
         playlistData.push({
                               "name": "节目1",
                               "type": "program",
                               "duration": "0.00s",
-                              "expanded": true,
+                              "TModel_depth": 0,
+                              "TModel_expend": true,
+                              "TModel_hasChildren": true,
                               "children": [
                                   {
-                                      "name": "监视1",
+                                      "name": "视窗1",
                                       "type": "window",
                                       "duration": "0.00s",
+                                      "TModel_depth": 1,
+                                      "TModel_expend": false,
+                                      "TModel_hasChildren": false,
                                       "children": []
                                   }
                               ]
@@ -304,7 +413,9 @@ Rectangle {
                               "name": programName || "节目" + (playlistData.length + 1),
                               "type": "program",
                               "duration": "0.00s",
-                              "expanded": true,
+                              "TModel_depth": 0,
+                              "TModel_expend": true,
+                              "TModel_hasChildren": false,
                               "children": []
                           })
     }
@@ -312,12 +423,19 @@ Rectangle {
     // 函数：添加视窗
     function addWindow(programIndex, windowName) {
         if (programIndex >= 0 && programIndex < playlistData.length) {
-            playlistData[programIndex].children.push({
-                                                         "name": windowName || "监视" + (playlistData[programIndex].children.length + 1),
-                                                         "type": "window",
-                                                         "duration": "0.00s",
-                                                         "children": []
-                                                     })
+            var newWindow = {
+                                 "name": windowName || "视窗" + (playlistData[programIndex].children.length + 1),
+                                 "type": "window",
+                                 "duration": "0.00s",
+                                 "TModel_depth": 1,
+                                 "TModel_expend": false,
+                                 "TModel_hasChildren": false,
+                                 "children": []
+                             }
+            playlistData[programIndex].children.push(newWindow)
+            // 更新父节点的hasChildren
+            playlistData[programIndex].TModel_hasChildren = true
+            playlistData = playlistData.slice()
         }
     }
 
@@ -367,13 +485,19 @@ Rectangle {
             if (currentWindowIndex >= 0 && currentWindowIndex < program.children.length) {
                 var window = program.children[currentWindowIndex]
                 
-                // 添加素材到视窗的子项
+                // 添加素材到视窗的子项 - 适配Tree.qml
                 window.children.push({
                                          name: materialData.name,
                                          type: materialData.type,
                                          duration: materialData.duration + "s",
+                                         TModel_depth: 2,
+                                         TModel_expend: false,
+                                         TModel_hasChildren: false,
                                          properties: materialData.properties
                                      })
+                
+                // 更新视窗的hasChildren
+                window.TModel_hasChildren = true
                 
                 // 触发UI更新
                 playlistData = playlistData.slice()
@@ -476,6 +600,8 @@ Rectangle {
             if (windowIndex >= 0 && windowIndex < program.children.length) {
                 // 从数组中删除指定索引的元素
                 program.children.splice(windowIndex, 1)
+                // 更新父节点的hasChildren
+                program.TModel_hasChildren = program.children.length > 0
                 // 触发UI更新
                 playlistData = playlistData.slice()
             }

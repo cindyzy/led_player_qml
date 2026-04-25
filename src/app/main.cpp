@@ -5,6 +5,7 @@
 #include <QDir>
 #include "../utils/charbitmapgenerator.h"
 #include "../utils/filehelper.h"
+#include "../core/models/PlaylistTreeModel.h"
 #include <QQmlContext>
 #include <QDebug>
 #include <QStandardPaths>
@@ -26,6 +27,7 @@ int main(int argc, char *argv[])
     // 注册C++组件
     qmlRegisterType<CharBitmapGenerator>("LedPlayer", 1, 0, "CharBitmapGenerator");
     qmlRegisterType<FileHelper>("LedPlayer", 1, 0, "FileHelper");
+    qmlRegisterType<PlaylistTreeModel>("LedPlayer", 1, 0, "PlaylistTreeModel");
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("fileHelper", new FileHelper(&engine));
