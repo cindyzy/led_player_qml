@@ -50,6 +50,7 @@ ApplicationWindow {
     AnimationEditorDialog
     {
         id:animationEditorDialog
+        visible: false
     }
     MessageDialog { id: messageDialog }
     // CharBitmapGenerator
@@ -57,7 +58,7 @@ ApplicationWindow {
     //     id:charBitmapGenerator
 
     // }
-    property var charGenerator: charBitmapGenerator
+    // property var charGenerator: charBitmapGenerator
     Connections {
         target: quickWiringDialog
         function onQuickWiringConfirmed(config) {

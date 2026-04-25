@@ -370,8 +370,32 @@ Rectangle {
                     console.log("折叠节点:", item.name, "索引:", index)
                     // playlistTreeModel.collapse(index)
                 }
-            }
+                onAddChildRequested:{
+                    var type=item.type
+                    switch(type)
+                    {
+                    case "program":
+                        playlistTreeModel.createWindowNode(index)
+                        break
+                    case "window":
+                        playlistTreeModel.createMaterialNode(index)
+                        break
+                    }
 
+                }
+            }
+RowLayout{
+Button{
+    text:"新建节目"
+    onClicked: playlistTreeModel.createProgramNode(-1)
+}
+Button{
+    text:"删除节目"
+}
+Button{
+    text:"复制节目"
+}
+}
 
         }
     }

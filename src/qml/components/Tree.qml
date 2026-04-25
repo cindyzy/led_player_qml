@@ -22,7 +22,8 @@ Rectangle {
     signal itemDoubleClicked(var item, int index)
     signal itemExpanded(var item, int index)
     signal itemCollapsed(var item, int index)
-
+    // 新增：请求添加子节点（外部需监听此信号并调用 addChildNode）
+    signal addChildRequested(var item, int index)
     // 当前选中项
     property var selectedItem: null
     property int selectedIndex: -1
@@ -160,9 +161,10 @@ Rectangle {
         delegate: Item {
             id: delegateItem
             width: listView.width
-            height:visible? effectiveHeight:0
+            height: visible ? effectiveHeight : 0
             clip: effectiveHeight === 0
-            visible: displayData.TModel_expend
+            visible: isVisible
+
             // 获取节点数据
             property var nodeData: model
 
@@ -187,14 +189,7 @@ Rectangle {
                 }
                 return false
             }
-            property bool nodeExpanded: {
-                if (displayData) {
-                    if (displayData.TModel_childrenExpend !== undefined) {
-                        return displayData.TModel_childrenExpend
-                    }
-                }
-                return falsenodeExpanded
-            }
+            property bool nodeExpanded: displayData ? displayData.TModel_childrenExpend === true : false
             property bool isSelected: listView.currentIndex === index
 
             // 计算节点是否可见（根据父节点的展开状态）
@@ -235,11 +230,13 @@ Rectangle {
 
             // 节点背景
             Rectangle {
+                id: nodeBackground
                 anchors.fill: parent
-                color: mouseArea.containsMouse ? hoverColor :
-                       (isSelected ? selectedColor : backgroundColor)
+                color: nodeMouseArea.containsMouse ? hoverColor :
+                                                     (isSelected ? selectedColor : backgroundColor)
 
                 RowLayout {
+                    id: rowLayout
                     anchors.fill: parent
                     anchors.leftMargin: nodeDepth * indentation + 5
                     anchors.rightMargin: 5
@@ -261,15 +258,19 @@ Rectangle {
                             font.pixelSize: 10
                         }
 
+                        // 展开/折叠按钮的鼠标区域
                         MouseArea {
+                            id: expandMouseArea
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
+                            onClicked: function(mouseEvent) {
+                                console.log("展开/折叠按钮被点击")
                                 if (nodeExpanded) {
                                     treeView.collapse(index)
                                 } else {
                                     treeView.expand(index)
                                 }
+                                mouseEvent.accepted = true
                             }
                         }
                     }
@@ -331,7 +332,9 @@ Rectangle {
                         height: 20
                         color: addChildMouseArea.containsMouse ? "#4a5568" : "transparent"
                         radius: 3
-                        visible: mouseArea.containsMouse
+                        visible:displayData.type!=="material"
+                        // visible: mouseArea.containsMouse
+                        z: 100  // 确保在层级最上方
 
                         Text {
                             anchors.centerIn: parent
@@ -346,34 +349,74 @@ Rectangle {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                var newNode = {
-                                    name: "新节点",
-                                    icon: "📄",
-                                    duration: "0.00s"
-                                }
-                                treeView.addChildNode(index, newNode)
+
+                            onClicked: function(mouseEvent) {
+                                // 发射信号，由外部决定添加什么数据
+                                // treeView.itemClicked(displayData, index)
+                                treeView.addChildRequested(displayData,index)
+                                mouseEvent.accepted = true
                             }
                         }
                     }
                 }
             }
 
-            // 鼠标区域
+            // 节点的鼠标区域 - 处理节点背景的点击
+            // 注意：这个区域不覆盖添加按钮
             MouseArea {
-                id: mouseArea
+                id: nodeMouseArea
                 anchors.fill: parent
+                // 排除添加按钮区域
+                anchors.rightMargin: 30  // 为添加按钮留出空间
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
 
-                onClicked: function(mouse) {
+                // 检查鼠标是否在添加按钮上
+                function isMouseOverAddButton(mouseX, mouseY) {
+                    var addButtonGlobalPos = addChildButton.mapToItem(delegateItem, 0, 0)
+                    var addButtonRect = Qt.rect(addButtonGlobalPos.x, addButtonGlobalPos.y,
+                                                addChildButton.width, addChildButton.height)
+                    return addButtonRect.contains(Qt.point(mouseX, mouseY))
+                }
+
+                onClicked: function(mouseEvent) {
+                    // 检查是否点击了添加按钮
+                    if (isMouseOverAddButton(mouseEvent.x, mouseEvent.y)) {
+                        console.log("点击发生在添加按钮区域，但被节点MouseArea捕获")
+                        return
+                    }
+
+                    // 检查是否点击了展开按钮
+                    var expandButtonGlobalPos = expandButton.mapToItem(delegateItem, 0, 0)
+                    var expandButtonRect = Qt.rect(expandButtonGlobalPos.x, expandButtonGlobalPos.y,
+                                                   expandButton.width, expandButton.height)
+                    if (expandButtonRect.contains(Qt.point(mouseEvent.x, mouseEvent.y))) {
+                        console.log("点击发生在展开按钮区域，但被节点MouseArea捕获")
+                        return
+                    }
+
+                    // 正常的节点点击逻辑
+                    console.log("节点背景被点击，索引:", index)
                     listView.currentIndex = index
                     selectedItem = displayData
                     selectedIndex = index
                     treeView.itemClicked(displayData, index)
                 }
 
-                onDoubleClicked: {
+                onDoubleClicked: function(mouseEvent) {
+                    // 检查是否双击了添加按钮
+                    if (isMouseOverAddButton(mouseEvent.x, mouseEvent.y)) {
+                        return
+                    }
+
+                    // 检查是否双击了展开按钮
+                    var expandButtonGlobalPos = expandButton.mapToItem(delegateItem, 0, 0)
+                    var expandButtonRect = Qt.rect(expandButtonGlobalPos.x, expandButtonGlobalPos.y,
+                                                   expandButton.width, expandButton.height)
+                    if (expandButtonRect.contains(Qt.point(mouseEvent.x, mouseEvent.y))) {
+                        return
+                    }
+
                     if (nodeHasChildren) {
                         if (nodeExpanded) {
                             treeView.collapse(index)
@@ -382,6 +425,16 @@ Rectangle {
                         }
                     }
                     treeView.itemDoubleClicked(displayData, index)
+                }
+
+                // 当鼠标进入时，检查是否在添加按钮上
+                onPositionChanged: function(mouseEvent) {
+                    if (isMouseOverAddButton(mouseEvent.x, mouseEvent.y)) {
+                        hoverEnabled = false
+                        nodeMouseArea.containsMouse = false
+                    } else {
+                        hoverEnabled = true
+                    }
                 }
             }
         }

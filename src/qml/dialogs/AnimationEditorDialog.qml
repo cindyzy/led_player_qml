@@ -734,46 +734,45 @@ Window {
         }
     }
 
-    // 测试CharBitmapGenerator
-    function testCharBitmapGenerator() {
-        console.log("=== 测试CharBitmapGenerator ===");
+    // // 测试CharBitmapGenerator
+    // function testCharBitmapGenerator() {
+    //     console.log("=== 测试CharBitmapGenerator ===");
 
-        if (!charGeneratorReady) {
-            console.error("CharBitmapGenerator未就绪");
-            return;
-        }
+    //     if (!charGeneratorReady) {
+    //         console.error("CharBitmapGenerator未就绪");
+    //         return;
+    //     }
 
-        // 清空缓存
-        charBitmapCache = {};
-        isCharBitmapCacheDirty = true;
+    //     // 清空缓存
+    //     charBitmapCache = {};
+    //     isCharBitmapCacheDirty = true;
 
-        // 测试简单字符
-        var testChars = ["L", "E", "D", "A", "B", "C"];
-        for (var i = 0; i < testChars.length; i++) {
-            var ch = testChars[i];
-            console.log("测试字符:", ch);
+    //     // 测试简单字符
+    //     var testChars = ["L", "E", "D", "A", "B", "C"];
+    //     for (var i = 0; i < testChars.length; i++) {
+    //         var ch = testChars[i];
+    //         console.log("测试字符:", ch);
 
-            var bitmap = getCharBitmapDynamic(ch, 24, "Arial");
-            if (bitmap && bitmap.length > 0) {
-                console.log("字符点阵尺寸:", bitmap.length, "x", (bitmap[0] ? bitmap[0].length : 0));
+    //         var bitmap = getCharBitmapDynamic(ch, 24, "Arial");
+    //         if (bitmap && bitmap.length > 0) {
+    //             console.log("字符点阵尺寸:", bitmap.length, "x", (bitmap[0] ? bitmap[0].length : 0));
 
-                // 显示前几行
-                var previewRows = Math.min(5, bitmap.length);
-                for (var r = 0; r < previewRows; r++) {
-                    var rowStr = "";
-                    var previewCols = Math.min(10, bitmap[r].length);
-                    for (var c = 0; c < previewCols; c++) {
-                        rowStr += (bitmap[r][c] === 1) ? "██" : "  ";
-                    }
-                    console.log("  " + rowStr);
-                }
-            } else {
-                console.error("获取字符点阵失败:", ch);
-            }
-        }
+    //             // 显示前几行
+    //             var previewRows = Math.min(5, bitmap.length);
+    //             for (var r = 0; r < previewRows; r++) {
+    //                 var rowStr = "";
+    //                 var previewCols = Math.min(10, bitmap[r].length);
+    //                 for (var c = 0; c < previewCols; c++) {
+    //                     rowStr += (bitmap[r][c] === 1) ? "██" : "  ";
+    //                 }
+    //                 console.log("  " + rowStr);
+    //             }
+    //         } else {
+    //             console.error("获取字符点阵失败:", ch);
+    //         }
+    //     }
 
-        console.log("=== 测试完成 ===");
-    }
+    // }
 
     // 开始播放动画
     function startPreview() {
@@ -886,30 +885,30 @@ Window {
                     font.pixelSize: 12
                 }
 
-                Button {
-                    id: testGeneratorBtn
-                    text: "测试生成器"
-                    width: 80
-                    height: 30
-                    visible: charGeneratorReady
+                // Button {
+                //     id: testGeneratorBtn
+                //     text: "测试生成器"
+                //     width: 80
+                //     height: 30
+                //     visible: charGeneratorReady
 
-                    onClicked: {
-                        testCharBitmapGenerator();
-                    }
+                //     onClicked: {
+                //         testCharBitmapGenerator();
+                //     }
 
-                    background: Rectangle {
-                        color: parent.pressed ? "#4a5568" : "#2b6cb0"
-                        radius: 4
-                    }
+                //     background: Rectangle {
+                //         color: parent.pressed ? "#4a5568" : "#2b6cb0"
+                //         radius: 4
+                //     }
 
-                    contentItem: Text {
-                        text: parent.text
-                        color: "white"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 12
-                    }
-                }
+                //     contentItem: Text {
+                //         text: parent.text
+                //         color: "white"
+                //         horizontalAlignment: Text.AlignHCenter
+                //         verticalAlignment: Text.AlignVCenter
+                //         font.pixelSize: 12
+                //     }
+                // }
 
                 Button {
                     id: reloadCacheBtn
@@ -1219,13 +1218,13 @@ Window {
                                             if (quickWiringConfig) {
                                                 quickWiringConfig.width = value;
                                             }
-                                            calculateGridParameters();  // 网格尺寸变化需重新计算布局
+                                            // calculateGridParameters();  // 网格尺寸变化需重新计算布局
                                             break;
                                         case "gridHeight":
                                             if (quickWiringConfig) {
                                                 quickWiringConfig.height = value;
                                             }
-                                            calculateGridParameters();
+                                            // calculateGridParameters();
                                             break;
                                         case "ledSize":
                                             // 假设存在 ledSizeProperty 变量
@@ -1445,7 +1444,7 @@ Window {
                             Layout.preferredWidth: 100
                             onValueChanged: {
                                 previewScale = value
-                                calculateGridParameters()
+                                // calculateGridParameters()
                                 wiringCanvas.requestPaint()
                             }
                         }
@@ -1665,8 +1664,8 @@ Window {
     }
 
     onQuickWiringConfigChanged: {
-        calculateGridParameters();
-        wiringCanvas.requestPaint();
+        // calculateGridParameters();
+        // wiringCanvas.requestPaint();
     }
 
     onTextColorChanged: wiringCanvas.requestPaint();
