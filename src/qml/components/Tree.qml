@@ -16,136 +16,97 @@ Rectangle {
     property color selectedColor: "#094771"
     property color hoverColor: "#2A2D2E"
     property color backgroundColor: "transparent"
+    property color deleteButtonHoverColor: "#aa2e2e"   // 删除按钮悬停颜色
+    property color addButtonHoverColor: "#4a5568"      // 添加按钮悬停颜色
 
     // 信号
     signal itemClicked(var item, int index)
     signal itemDoubleClicked(var item, int index)
     signal itemExpanded(var item, int index)
     signal itemCollapsed(var item, int index)
-    // 新增：请求添加子节点（外部需监听此信号并调用 addChildNode）
     signal addChildRequested(var item, int index)
+    // 新增：删除节点请求信号（外部可监听，但内部已直接删除）
+    signal deleteRequested(var item, int index)
+
     // 当前选中项
     property var selectedItem: null
     property int selectedIndex: -1
 
-    // 获取节点数据
+    // 获取节点数据（保持不变）
     function getNodeData(index) {
-        if (!model) {
-            return null
-        }
-
-        // 对于C++模型，使用model.get方法
+        if (!model) return null
         if (model.get && typeof model.get === 'function') {
             return model.get(index)
         }
-
-        // 检查是否是JavaScript数组模型
         if (Array.isArray(model) && index >= 0 && index < model.length) {
             return model[index]
         }
-
         return null
     }
 
-    // 获取节点深度
     function getNodeDepth(index) {
         var nodeData = getNodeData(index)
-        if (nodeData && nodeData.display) {
-            return nodeData.display.TModel_depth || 0
-        }
-        return 0
+        return (nodeData && nodeData.display && nodeData.display.TModel_depth) || 0
     }
 
-    // 检查节点是否有子节点
     function hasChildren(index) {
         var nodeData = getNodeData(index)
-        if (nodeData && nodeData.display) {
-            return nodeData.display.TModel_hasChildren || false
-        }
-        return false
+        return nodeData && nodeData.display && nodeData.display.TModel_hasChildren
     }
 
-    // 检查节点是否展开
     function isExpanded(index) {
         var nodeData = getNodeData(index)
-        if (nodeData && nodeData.display) {
-            return nodeData.display.TModel_expend || false
-        }
-        return false
+        return nodeData && nodeData.display && nodeData.display.TModel_expend
     }
 
-    // 添加根节点
     function addRootNode(nodeData) {
-        if (model && model.addNode) {
-            return model.addNode(-1, nodeData)
-        }
+        if (model && model.addNode) return model.addNode(-1, nodeData)
         return -1
     }
 
-    // 在指定父节点下添加子节点
     function addChildNode(parentIndex, nodeData) {
-        if (model && model.addNode) {
-            return model.addNode(parentIndex, nodeData)
-        }
+        if (model && model.addNode) return model.addNode(parentIndex, nodeData)
         return -1
     }
 
-    // 删除节点
+    // 删除节点（内部直接调用model的remove）
     function removeNode(index) {
         if (model && model.remove) {
             model.remove(index)
+            // 可选：若删除后当前选中的索引失效，清空选中状态
+            if (selectedIndex === index || selectedIndex > index) {
+                selectedItem = null
+                selectedIndex = -1
+            }
         }
     }
 
-    // 清空所有节点
     function clear() {
-        if (model && model.clear) {
-            model.clear()
-        }
+        if (model && model.clear) model.clear()
     }
 
-    // 展开节点
     function expand(index) {
-        if (model && model.expand) {
-            model.expand(index)
-        }
-        // 刷新整个视图以更新子节点的可见性
-        listView.model = listView.model
+        if (model && model.expand) model.expand(index)
+        listView.model = listView.model   // 刷新视图
     }
 
-    // 折叠节点
     function collapse(index) {
-        if (model && model.collapse) {
-            model.collapse(index)
-        }
-        // 刷新整个视图以更新子节点的可见性
+        if (model && model.collapse) model.collapse(index)
         listView.model = listView.model
     }
 
-    // 展开所有节点
     function expandAll() {
-        if (model && model.expandAll) {
-            model.expandAll()
-        }
-        // 刷新整个视图以更新所有节点的可见性
+        if (model && model.expandAll) model.expandAll()
         listView.model = listView.model
     }
 
-    // 折叠所有节点
     function collapseAll() {
-        if (model && model.collapseAll) {
-            model.collapseAll()
-        }
-        // 刷新整个视图以更新所有节点的可见性
+        if (model && model.collapseAll) model.collapseAll()
         listView.model = listView.model
     }
 
-    // 展开到指定节点
     function expandTo(index) {
-        if (model && model.expandTo) {
-            model.expandTo(index)
-        }
-        // 刷新整个视图以更新节点的可见性
+        if (model && model.expandTo) model.expandTo(index)
         listView.model = listView.model
     }
 
@@ -155,9 +116,6 @@ Rectangle {
         anchors.fill: parent
         clip: true
 
-        // ScrollBar.horizontal.policy: ScrollBar.AsNeeded
-        // ScrollBar.vertical.policy: ScrollBar.AsNeeded
-
         delegate: Item {
             id: delegateItem
             width: listView.width
@@ -165,59 +123,27 @@ Rectangle {
             clip: effectiveHeight === 0
             visible: isVisible
 
-            // 获取节点数据
             property var nodeData: model
-
-            // 获取display对象
             property var displayData: nodeData && nodeData.display ? nodeData.display : null
 
-            property int nodeDepth: {
-                if (displayData) {
-                    if (displayData.TModel_depth !== undefined) {
-                        return displayData.TModel_depth
-                    } else if (displayData.TModel_depth === 0) {
-                        return 0
-                    }
-                }
-                return 0
-            }
-            property bool nodeHasChildren: {
-                if (displayData) {
-                    if (displayData.TModel_hasChildren !== undefined) {
-                        return displayData.TModel_hasChildren
-                    }
-                }
-                return false
-            }
-            property bool nodeExpanded: displayData ? displayData.TModel_childrenExpend === true : false
+            property int nodeDepth: displayData?.TModel_depth ?? 0
+            property bool nodeHasChildren: displayData?.TModel_hasChildren ?? false
+            property bool nodeExpanded: displayData?.TModel_childrenExpend === true
             property bool isSelected: listView.currentIndex === index
 
-            // 计算节点是否可见（根据父节点的展开状态）
+            // 计算可见性（保持不变）
             property bool isVisible: {
-                // 根节点总是可见
                 if (nodeDepth === 0) return true
-
-                // 查找当前节点的直接父节点
-                // 父节点的深度比当前节点小1
                 for (var i = index - 1; i >= 0; i--) {
                     var item = null
-
-                    // 对于C++模型，使用listView.model.get
                     if (listView.model && listView.model.get) {
-                        try {
-                            item = listView.model.get(i)
-                        } catch (e) {
-                            console.log("Error getting item:", e)
-                        }
+                        try { item = listView.model.get(i) } catch(e) {}
                     } else {
-                        // 对于JavaScript数组模型
                         item = treeView.getNodeData(i)
                     }
-
                     if (item) {
                         var itemDisplay = item.display ? item.display : item
-                        if (itemDisplay.TModel_depth !== undefined && itemDisplay.TModel_depth === nodeDepth - 1) {
-                            // 使用宽松比较，因为C++ bool可能转换为不同的类型
+                        if (itemDisplay.TModel_depth === nodeDepth - 1) {
                             return itemDisplay.TModel_expend == true
                         }
                     }
@@ -225,7 +151,6 @@ Rectangle {
                 return true
             }
 
-            // 高度：如果不可见则高度为0
             property int effectiveHeight: isVisible ? itemHeight : 0
 
             // 节点背景
@@ -233,7 +158,7 @@ Rectangle {
                 id: nodeBackground
                 anchors.fill: parent
                 color: nodeMouseArea.containsMouse ? hoverColor :
-                                                     (isSelected ? selectedColor : backgroundColor)
+                                                    (isSelected ? selectedColor : backgroundColor)
 
                 RowLayout {
                     id: rowLayout
@@ -242,71 +167,51 @@ Rectangle {
                     anchors.rightMargin: 5
                     spacing: 5
 
-                    // 展开/折叠按钮
+                    // 展开/折叠按钮（不变）
                     Rectangle {
                         id: expandButton
-                        width: 20
-                        height: 20
+                        width: 20; height: 20
                         color: "transparent"
                         visible: nodeHasChildren
                         enabled: nodeHasChildren
-
                         Text {
                             anchors.centerIn: parent
                             text: nodeExpanded ? "▼" : "▶"
                             color: textColor
                             font.pixelSize: 10
                         }
-
-                        // 展开/折叠按钮的鼠标区域
                         MouseArea {
                             id: expandMouseArea
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: function(mouseEvent) {
-                                console.log("展开/折叠按钮被点击")
-                                if (nodeExpanded) {
-                                    treeView.collapse(index)
-                                } else {
-                                    treeView.expand(index)
-                                }
+                                if (nodeExpanded) treeView.collapse(index)
+                                else treeView.expand(index)
                                 mouseEvent.accepted = true
                             }
                         }
                     }
 
-                    // 占位符（无子节点时）
-                    Item {
-                        width: 20
-                        height: 20
-                        visible: !nodeHasChildren
-                    }
+                    Item { width: 20; height: 20; visible: !nodeHasChildren } // 占位符
 
-                    // 图标
-                    Text {
+                    Text {  // 图标
                         id: iconText
-                        text: displayData && displayData.icon ? displayData.icon : "📄"
+                        text: displayData?.icon || "📄"
                         font.pixelSize: 14
                         color: textColor
                         Layout.alignment: Qt.AlignVCenter
                     }
 
-                    // 名称
-                    Text {
+                    Text {  // 名称
                         id: nameText
                         text: {
                             if (displayData) {
-                                // 尝试不同的方式获取name属性
-                                if (displayData.name) {
-                                    return displayData.name
-                                } else if (displayData.toString && displayData.toString() !== '[object Object]') {
+                                if (displayData.name) return displayData.name
+                                if (displayData.toString && displayData.toString() !== '[object Object]')
                                     return displayData.toString()
-                                } else {
-                                    return "节点 " + index
-                                }
-                            } else {
                                 return "节点 " + index
                             }
+                            return "节点 " + index
                         }
                         font.pixelSize: 12
                         color: textColor
@@ -315,26 +220,23 @@ Rectangle {
                         elide: Text.ElideRight
                     }
 
-                    // 时长（可选）
-                    Text {
+                    Text {  // 时长（可选）
                         id: durationText
-                        text: displayData && displayData.duration ? displayData.duration : ""
+                        text: displayData?.duration || ""
                         font.pixelSize: 10
                         color: "#999999"
                         Layout.alignment: Qt.AlignVCenter
                         visible: text !== ""
                     }
 
-                    // 添加子节点按钮
+                    // ============= 添加按钮（原有） =============
                     Rectangle {
                         id: addChildButton
-                        width: 20
-                        height: 20
-                        color: addChildMouseArea.containsMouse ? "#4a5568" : "transparent"
+                        width: 20; height: 20
+                        color: addChildMouseArea.containsMouse ? addButtonHoverColor : "transparent"
                         radius: 3
-                        visible:displayData.type!=="material"
-                        // visible: mouseArea.containsMouse
-                        z: 100  // 确保在层级最上方
+                        visible: displayData?.type !== "material"   // 保持原有逻辑
+                        z: 100
 
                         Text {
                             anchors.centerIn: parent
@@ -349,11 +251,40 @@ Rectangle {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-
                             onClicked: function(mouseEvent) {
-                                // 发射信号，由外部决定添加什么数据
-                                // treeView.itemClicked(displayData, index)
-                                treeView.addChildRequested(displayData,index)
+                                treeView.addChildRequested(displayData, index)
+                                mouseEvent.accepted = true
+                            }
+                        }
+                    }
+
+                    // ============= 新增：删除按钮 =============
+                    Rectangle {
+                        id: deleteButton
+                        width: 20; height: 20
+                        color: deleteMouseArea.containsMouse ? deleteButtonHoverColor : "transparent"
+                        radius: 3
+                        visible: true   // 可自定义条件，例如只对非根节点显示
+                        z: 100
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "✖"   // 或 "🗑" / "X"
+                            color: textColor
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+
+                        MouseArea {
+                            id: deleteMouseArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: function(mouseEvent) {
+                                // 直接调用删除函数
+                                treeView.removeNode(index)
+                                // 发射删除信号，供外部监听（可选）
+                                treeView.deleteRequested(displayData, index)
                                 mouseEvent.accepted = true
                             }
                         }
@@ -361,42 +292,29 @@ Rectangle {
                 }
             }
 
-            // 节点的鼠标区域 - 处理节点背景的点击
-            // 注意：这个区域不覆盖添加按钮
+            // 节点鼠标区域（需要扩大右侧留空，避免遮挡两个按钮）
             MouseArea {
                 id: nodeMouseArea
                 anchors.fill: parent
-                // 排除添加按钮区域
-                anchors.rightMargin: 30  // 为添加按钮留出空间
+                anchors.rightMargin: 50   // 原为30，现增加删除按钮宽度20+间距5 => 需留出约50
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
 
-                // 检查鼠标是否在添加按钮上
-                function isMouseOverAddButton(mouseX, mouseY) {
-                    var addButtonGlobalPos = addChildButton.mapToItem(delegateItem, 0, 0)
-                    var addButtonRect = Qt.rect(addButtonGlobalPos.x, addButtonGlobalPos.y,
-                                                addChildButton.width, addChildButton.height)
-                    return addButtonRect.contains(Qt.point(mouseX, mouseY))
+                function isMouseOverButton(buttonItem, mouseX, mouseY) {
+                    if (!buttonItem || !buttonItem.visible) return false
+                    var globalPos = buttonItem.mapToItem(delegateItem, 0, 0)
+                    var rect = Qt.rect(globalPos.x, globalPos.y, buttonItem.width, buttonItem.height)
+                    return rect.contains(Qt.point(mouseX, mouseY))
+                }
+
+                function isMouseOverAnyButton(mouseX, mouseY) {
+                    return isMouseOverButton(expandButton, mouseX, mouseY) ||
+                           isMouseOverButton(addChildButton, mouseX, mouseY) ||
+                           isMouseOverButton(deleteButton, mouseX, mouseY)
                 }
 
                 onClicked: function(mouseEvent) {
-                    // 检查是否点击了添加按钮
-                    if (isMouseOverAddButton(mouseEvent.x, mouseEvent.y)) {
-                        console.log("点击发生在添加按钮区域，但被节点MouseArea捕获")
-                        return
-                    }
-
-                    // 检查是否点击了展开按钮
-                    var expandButtonGlobalPos = expandButton.mapToItem(delegateItem, 0, 0)
-                    var expandButtonRect = Qt.rect(expandButtonGlobalPos.x, expandButtonGlobalPos.y,
-                                                   expandButton.width, expandButton.height)
-                    if (expandButtonRect.contains(Qt.point(mouseEvent.x, mouseEvent.y))) {
-                        console.log("点击发生在展开按钮区域，但被节点MouseArea捕获")
-                        return
-                    }
-
-                    // 正常的节点点击逻辑
-                    console.log("节点背景被点击，索引:", index)
+                    if (isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)) return
                     listView.currentIndex = index
                     selectedItem = displayData
                     selectedIndex = index
@@ -404,44 +322,22 @@ Rectangle {
                 }
 
                 onDoubleClicked: function(mouseEvent) {
-                    // 检查是否双击了添加按钮
-                    if (isMouseOverAddButton(mouseEvent.x, mouseEvent.y)) {
-                        return
-                    }
-
-                    // 检查是否双击了展开按钮
-                    var expandButtonGlobalPos = expandButton.mapToItem(delegateItem, 0, 0)
-                    var expandButtonRect = Qt.rect(expandButtonGlobalPos.x, expandButtonGlobalPos.y,
-                                                   expandButton.width, expandButton.height)
-                    if (expandButtonRect.contains(Qt.point(mouseEvent.x, mouseEvent.y))) {
-                        return
-                    }
-
+                    if (isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)) return
                     if (nodeHasChildren) {
-                        if (nodeExpanded) {
-                            treeView.collapse(index)
-                        } else {
-                            treeView.expand(index)
-                        }
+                        if (nodeExpanded) treeView.collapse(index)
+                        else treeView.expand(index)
                     }
                     treeView.itemDoubleClicked(displayData, index)
                 }
 
-                // 当鼠标进入时，检查是否在添加按钮上
                 onPositionChanged: function(mouseEvent) {
-                    if (isMouseOverAddButton(mouseEvent.x, mouseEvent.y)) {
-                        hoverEnabled = false
-                        nodeMouseArea.containsMouse = false
-                    } else {
-                        hoverEnabled = true
-                    }
+                    // 当鼠标移动到任意按钮上时，暂时隐藏自身的悬停效果
+                    nodeMouseArea.containsMouse = !isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)
                 }
             }
         }
 
         highlightFollowsCurrentItem: false
-        highlight: Rectangle {
-            visible: false
-        }
+        highlight: Rectangle { visible: false }
     }
 }

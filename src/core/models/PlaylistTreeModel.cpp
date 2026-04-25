@@ -356,6 +356,27 @@ void PlaylistTreeModel::createMaterialNode(int parentIndex, const QString& mater
              << "父节点:" << parentIndex
              << "索引:" << newMaterialIndex
              << "时长:" << durationToString(materialDuration);
+
+
+    qDebug() << "=== 节点层次结构调试 ===";
+    qDebug() << "总节点数:" << _tree_model.count();
+
+    for (int i = 0; i < _tree_model.count(); i++) {
+        QJsonObject nodeData = getNodeDisplayData(i);
+        if (!nodeData.isEmpty()) {
+            QString name = nodeData["name"].toString("未知");
+            int depth = nodeData[cDepthKey].toInt(-1);
+            int parentIndex = nodeData[cParentKey].toInt(-1);
+            bool hasChildren = nodeData[cHasChildendKey].toBool(false);
+            bool expand = nodeData[cExpendKey].toBool(true);
+            bool childrenExpand = nodeData[cChildrenExpendKey].toBool(false);
+
+            qDebug() << QString("节点[%1]: 名称='%2' 深度=%3 父节点=%4 有子节点=%5 展开=%6 子节点展开=%7")
+                            .arg(i).arg(name).arg(depth).arg(parentIndex)
+                            .arg(hasChildren).arg(expand).arg(childrenExpand);
+        }
+    }
+    qDebug() << "=== 结束 ===";
 }
 // 删除素材节点
 void PlaylistTreeModel::removeMaterialNode(int index)
@@ -434,4 +455,98 @@ void PlaylistTreeModel::updateMaterialDuration(int index, double newDuration)
     }
 
     qDebug() << "更新素材节点时长:" << index << "新时长:" << durationToString(newDuration);
+}
+// PlaylistTreeModel.cpp 中实现
+
+void PlaylistTreeModel::removeProgramNode(int index)
+{
+    if (index < 0 || index >= _tree_model.count())
+        return;
+
+    QJsonObject displayData = getNodeDisplayData(index);
+    if (displayData.isEmpty() || displayData["type"].toString() != "program")
+        return;
+
+    QString programName = displayData["name"].toString();
+    int parentIdx = displayData[cParentKey].toInt(-1);
+
+    // 1. 从节目名集合中移除
+    m_programNames.remove(programName);
+
+    // 2. 收集该节目下的所有直接子窗口（节目→窗口）
+    QList<int> windowIndices = searchChildren(index);
+    for (int winIdx : windowIndices) {
+        QJsonObject winData = getNodeDisplayData(winIdx);
+        if (!winData.isEmpty()) {
+            QString winName = winData["name"].toString();
+            // 从父节目的窗口名集合中移除
+            if (m_windowNames.contains(index)) {
+                m_windowNames[index].remove(winName);
+            }
+        }
+        // 清理该窗口对应的素材名集合
+        if (m_materialNames.contains(winIdx)) {
+            m_materialNames.remove(winIdx);
+        }
+    }
+
+    // 3. 删除节目节点（模型会自动删除所有后代，如窗口和素材）
+    _tree_model.remove(index,
+                       [this](int first, int last) {
+                           this->beginRemoveRows(QModelIndex(), first, last);
+                       },
+                       [this]() {
+                           this->endRemoveRows();
+                       });
+
+    // 4. 清理节目中窗口名集合的残留映射
+    if (m_windowNames.contains(index)) {
+        m_windowNames.remove(index);
+    }
+
+    // 5. 如果有父节点，更新父节点时长（节目通常为顶层，但为了扩展性保留）
+    if (parentIdx >= 0) {
+        updateParentDuration(parentIdx);
+    }
+
+    qDebug() << "删除节目节点:" << programName << "索引:" << index;
+}
+
+void PlaylistTreeModel::removeWindowNode(int index)
+{
+    if (index < 0 || index >= _tree_model.count())
+        return;
+
+    QJsonObject displayData = getNodeDisplayData(index);
+    if (displayData.isEmpty() || displayData["type"].toString() != "window")
+        return;
+
+    int parentProgramIndex = displayData[cParentKey].toInt(-1);
+    QString windowName = displayData["name"].toString();
+
+    // 1. 从父节目的窗口名集合中移除
+    if (parentProgramIndex >= 0 && m_windowNames.contains(parentProgramIndex)) {
+        m_windowNames[parentProgramIndex].remove(windowName);
+    }
+
+    // 2. 清理该窗口对应的素材名集合
+    if (m_materialNames.contains(index)) {
+        m_materialNames.remove(index);
+    }
+
+    // 3. 删除窗口节点（模型会自动删除其下的所有素材）
+    _tree_model.remove(index,
+                       [this](int first, int last) {
+                           this->beginRemoveRows(QModelIndex(), first, last);
+                       },
+                       [this]() {
+                           this->endRemoveRows();
+                       });
+
+    // 4. 更新父节目节点的时长
+    if (parentProgramIndex >= 0) {
+        updateParentDuration(parentProgramIndex);
+    }
+
+    qDebug() << "删除窗口节点:" << windowName << "索引:" << index;
 }

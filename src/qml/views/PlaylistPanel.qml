@@ -383,6 +383,21 @@ Rectangle {
                     }
 
                 }
+                onDeleteRequested: {
+                    var type=item.type
+                    switch(type)
+                    {
+                    case "program":
+                        playlistTreeModel.removeProgramNode(index)
+                        break
+                    case "window":
+                        playlistTreeModel.removeWindowNode(index)
+                        break
+                    case "material":
+                        playlistTreeModel.removeMaterialNode(index)
+                        break
+                    }
+                }
             }
 RowLayout{
 Button{
