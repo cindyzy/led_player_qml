@@ -23,6 +23,7 @@ public:
     Q_INVOKABLE void removeProgramNode(int index);
     Q_INVOKABLE void removeWindowNode(int index);
 
+
 private:
     int m_programCounter; // 节目计数器
     int m_windowCounter;  // 窗口计数器

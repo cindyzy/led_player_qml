@@ -158,7 +158,7 @@ Rectangle {
                 id: nodeBackground
                 anchors.fill: parent
                 color: nodeMouseArea.containsMouse ? hoverColor :
-                                                    (isSelected ? selectedColor : backgroundColor)
+                                                     (isSelected ? selectedColor : backgroundColor)
 
                 RowLayout {
                     id: rowLayout
@@ -291,14 +291,83 @@ Rectangle {
                     }
                 }
             }
-
-            // 节点鼠标区域（需要扩大右侧留空，避免遮挡两个按钮）
+            // 节点鼠标区域
             MouseArea {
                 id: nodeMouseArea
                 anchors.fill: parent
-                anchors.rightMargin: 50   // 原为30，现增加删除按钮宽度20+间距5 => 需留出约50
+                anchors.rightMargin: 50
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
+                propagateComposedEvents: true  // 允许事件传播
+
+                // 移除 onPositionChanged 中的逻辑
+                // 让悬停效果自然工作
+
+                onClicked: function(mouseEvent) {
+                    // 检查是否在按钮区域
+                    var localPos = mapToItem(rowLayout, mouseEvent.x, mouseEvent.y)
+                    var isOverButton = false
+
+                    // // 检查是否在展开/折叠按钮上
+                    // if (expandButton.visible) {
+                    //     var expandButtonPos = expandButton.mapFromItem(rowLayout, 0, 0)
+                    //     var expandButtonRect = Qt.rect(expandButtonPos.x, expandButtonPos.y, expandButton.width, expandButton.height)
+                    //     if (expandButtonRect.contains(Qt.point(localPos.x, localPos.y))) {
+                    //         isOverButton = true
+                    //     }
+                    // }
+                    if (expandButton.visible) {
+                        isOverButton = expandButton.contains(expandButton.mapFromItem(rowLayout, localPos.x, localPos.y))
+                    }
+                    // 检查是否在添加按钮上
+                    if (addChildButton.visible) {
+                        isOverButton = addChildButton.contains(addChildButton.mapFromItem(rowLayout, localPos.x, localPos.y))
+                    }
+
+                    // 检查是否在删除按钮上
+
+                    if (deleteButton.visible) {
+                        isOverButton = deleteButton.contains(deleteButton.mapFromItem(rowLayout, localPos.x, localPos.y))
+                    }
+                    // 如果不在按钮上，才处理节点点击
+                    if (!isOverButton) {
+                        listView.currentIndex = index
+                        selectedItem = displayData
+                        selectedIndex = index
+                        treeView.itemClicked(displayData, index)
+                    } else {
+                        // 如果在按钮上，不处理节点点击
+                        mouseEvent.accepted = false
+                    }
+                }
+
+                onDoubleClicked: function(mouseEvent) {
+                    // 类似检查
+                    if (!isOverButton(mouseEvent.x, mouseEvent.y)) {
+                        if (nodeHasChildren) {
+                            if (nodeExpanded) treeView.collapse(index)
+                            else treeView.expand(index)
+                        }
+                        treeView.itemDoubleClicked(displayData, index)
+                    } else {
+                        mouseEvent.accepted = false
+                    }
+                }
+
+                function isOverButton(mouseX, mouseY) {
+                    // ... 同onClicked中的检查逻辑
+                    if (isMouseOverAnyButton(mouseX,mouseY)) return
+                    listView.currentIndex = index
+                    selectedItem = displayData
+                    selectedIndex = index
+                    treeView.itemClicked(displayData, index)
+                }
+
+                function isMouseOverAnyButton(mouseX, mouseY) {
+                    return isMouseOverButton(expandButton, mouseX, mouseY) ||
+                            isMouseOverButton(addChildButton, mouseX, mouseY) ||
+                            isMouseOverButton(deleteButton, mouseX, mouseY)
+                }
 
                 function isMouseOverButton(buttonItem, mouseX, mouseY) {
                     if (!buttonItem || !buttonItem.visible) return false
@@ -306,35 +375,59 @@ Rectangle {
                     var rect = Qt.rect(globalPos.x, globalPos.y, buttonItem.width, buttonItem.height)
                     return rect.contains(Qt.point(mouseX, mouseY))
                 }
-
-                function isMouseOverAnyButton(mouseX, mouseY) {
-                    return isMouseOverButton(expandButton, mouseX, mouseY) ||
-                           isMouseOverButton(addChildButton, mouseX, mouseY) ||
-                           isMouseOverButton(deleteButton, mouseX, mouseY)
-                }
-
-                onClicked: function(mouseEvent) {
-                    if (isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)) return
-                    listView.currentIndex = index
-                    selectedItem = displayData
-                    selectedIndex = index
-                    treeView.itemClicked(displayData, index)
-                }
-
-                onDoubleClicked: function(mouseEvent) {
-                    if (isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)) return
-                    if (nodeHasChildren) {
-                        if (nodeExpanded) treeView.collapse(index)
-                        else treeView.expand(index)
-                    }
-                    treeView.itemDoubleClicked(displayData, index)
-                }
-
-                onPositionChanged: function(mouseEvent) {
-                    // 当鼠标移动到任意按钮上时，暂时隐藏自身的悬停效果
-                    nodeMouseArea.containsMouse = !isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)
-                }
             }
+            // 节点鼠标区域（需要扩大右侧留空，避免遮挡两个按钮）
+            //     MouseArea {
+            //         id: nodeMouseArea
+            //         anchors.fill: parent
+            //         anchors.rightMargin: 50   // 原为30，现增加删除按钮宽度20+间距5 => 需留出约50
+            //         hoverEnabled: true
+            //         acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+            //         function isMouseOverButton(buttonItem, mouseX, mouseY) {
+            //             if (!buttonItem || !buttonItem.visible) return false
+            //             var globalPos = buttonItem.mapToItem(delegateItem, 0, 0)
+            //             var rect = Qt.rect(globalPos.x, globalPos.y, buttonItem.width, buttonItem.height)
+            //             return rect.contains(Qt.point(mouseX, mouseY))
+            //         }
+
+            // function isMouseOverAnyButton(mouseX, mouseY) {
+            //     return isMouseOverButton(expandButton, mouseX, mouseY) ||
+            //            isMouseOverButton(addChildButton, mouseX, mouseY) ||
+            //            isMouseOverButton(deleteButton, mouseX, mouseY)
+            // }
+
+            //         onClicked: function(mouseEvent) {
+            //             if (isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)) return
+            //             listView.currentIndex = index
+            //             selectedItem = displayData
+            //             selectedIndex = index
+            //             treeView.itemClicked(displayData, index)
+            //         }
+
+            //         onDoubleClicked: function(mouseEvent) {
+            //             if (isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)) return
+            //             if (nodeHasChildren) {
+            //                 if (nodeExpanded) treeView.collapse(index)
+            //                 else treeView.expand(index)
+            //             }
+            //             treeView.itemDoubleClicked(displayData, index)
+            //         }
+
+            //         onPositionChanged: function(mouseEvent) {
+            //             // 当鼠标移动到任意按钮上时，暂时隐藏自身的悬停效果
+            //             // nodeMouseArea.containsMouse = !isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)
+            //             // 修正：仅用于悬停效果，不影响点击事件
+            //                var overButton = isMouseOverAnyButton(mouseEvent.x, mouseEvent.y)
+            //                nodeMouseArea.containsMouse = !overButton
+
+            //                // 注意：这里应该返回，不阻止事件传递
+            //                mouseEvent.accepted = false
+
+
+            //         }
+            //     }
+
         }
 
         highlightFollowsCurrentItem: false

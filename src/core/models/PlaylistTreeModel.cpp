@@ -58,7 +58,10 @@ void PlaylistTreeModel::createProgramNode(int parentIndex, const QString& progra
                                                    {"name", finalProgramName},
                                                    {"icon", "📁"},
                                                    {"duration", "0.00s"},  // 初始为0
-                                                   {"type", "program"}
+                                                   {"type", "program"},
+                                                   {"TModel_depth", "1"},
+                                                   {"TModel_expend", "false"},
+                                                   {"TModel_hasChildren", "false"}
                                                }));
 
     // 初始化这个节目下的窗口名集合
@@ -112,7 +115,10 @@ void PlaylistTreeModel::createWindowNode(int parentIndex, const QString& windowN
                                                   {"name", finalWindowName},
                                                   {"icon", "🖼"},
                                                   {"duration", "0.00s"},  // 初始为0
-                                                  {"type", "window"}
+                                                  {"type", "window"},
+                                                  {"TModel_depth", "1"},
+                                                  {"TModel_expend", "false"},
+                                                  {"TModel_hasChildren", "false"}
                                               }));
 
     // 初始化这个窗口下的素材名集合

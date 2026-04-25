@@ -30,157 +30,6 @@ Rectangle {
     }
 
     // 属性：播放列表数据 - 适配Tree.qml和C++ TreeViewModel
-    // 每个节点包含: TModel_depth(深度), TModel_expend(展开), TModel_hasChildren(有子节点), name, icon, duration, children
-    // 3个节目 x 3个视窗 x 3个素材
-    property var playlistData:[
-        {
-            name: "节目1",
-            icon: "📁",
-            duration: "10.00s",
-            TModel_depth: 0,
-            TModel_expend: true,
-            TModel_hasChildren: true,
-            children: [
-                {
-                    name: "视窗1",
-                    icon: "🖼",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材1-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材1-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材1-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                },
-                {
-                    name: "视窗2",
-                    icon: "🖼",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材2-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材2-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材2-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                },
-                {
-                    name: "视窗3",
-                    icon: "🖼",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材3-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材3-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材3-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                }
-            ]
-        },
-        {
-            name: "节目2",
-            icon: "📁",
-            duration: "10.00s",
-            TModel_depth: 0,
-            TModel_expend: true,
-            TModel_hasChildren: true,
-            children: [
-                {
-                    name: "视窗1",
-                    icon: "🖼",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材1-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材1-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材1-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                },
-                {
-                    name: "视窗2",
-                    icon: "🖼",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材2-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材2-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材2-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                },
-                {
-                    name: "视窗3",
-                    icon: "🖼",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材3-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材3-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材3-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                }
-            ]
-        },
-        {
-            name: "节目3",
-            icon: "📁",
-            duration: "10.00s",
-            TModel_depth: 0,
-            TModel_expend: true,
-            TModel_hasChildren: true,
-            children: [
-                {
-                    name: "视窗1",
-                    icon: "🖼",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材1-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材1-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材1-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                },
-                {
-                    name: "视窗2",
-                    icon: "🖼",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材2-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材2-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材2-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                },
-                {
-                    name: "视窗3",
-                    icon: "�",
-                    duration: "3.33s",
-                    TModel_depth: 1,
-                    TModel_expend: true,
-                    TModel_hasChildren: true,
-                    children: [
-                        { name: "素材3-1", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材3-2", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] },
-                        { name: "素材3-3", icon: "📄", duration: "1.11s", TModel_depth: 2, TModel_expend: false, TModel_hasChildren: false, children: [] }
-                    ]
-                }
-            ]
-        }
-    ]
 
     ColumnLayout {
         anchors.fill: parent
@@ -441,13 +290,14 @@ RowLayout{
             console.warn("未选中任何节点")
             return -1
         }
-        var node = treeView.getNodeData(treeView.selectedIndex)
-        if (!node || !node.display) {
+
+        var node = treeView.selectedItem
+        if (!node ) {
             console.warn("无效的选中节点")
             return -1
         }
         // 深度为 0 表示是节目（根节点）
-        if (node.display.TModel_depth !== 0) {
+        if (node.TModel_depth !== 0) {
             console.warn("选中的不是节目，请选中节目节点")
             return -1
         }
@@ -550,18 +400,6 @@ RowLayout{
                           })
     }
 
-    // 函数：添加节目
-    function addProgram(programName) {
-        playlistData.push({
-                              "name": programName || "节目" + (playlistData.length + 1),
-                              "type": "program",
-                              "duration": "0.00s",
-                              "TModel_depth": 0,
-                              "TModel_expend": true,
-                              "TModel_hasChildren": false,
-                              "children": []
-                          })
-    }
 
     // 函数：添加视窗
     function addWindow(programIndex, windowName) {
