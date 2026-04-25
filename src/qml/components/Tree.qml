@@ -269,7 +269,7 @@ Rectangle {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "✖"   // 或 "🗑" / "X"
+                            text: "🗑"   // 或 "🗑" / "✖"
                             color: textColor
                             font.pixelSize: 12
                             font.bold: true

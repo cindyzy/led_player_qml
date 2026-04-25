@@ -400,21 +400,124 @@ Rectangle {
                 }
             }
 RowLayout{
-Button{
-    text:"新建节目"
-    onClicked: playlistTreeModel.createProgramNode(-1)
-}
-Button{
-    text:"删除节目"
-}
-Button{
-    text:"复制节目"
-}
+    ToolButton {
+            text: "➕"  // 或使用图标
+            font.pixelSize: 16
+            ToolTip.text: "新建节目"
+            ToolTip.visible: hovered
+            onClicked: playlistTreeModel.createProgramNode(-1)
+        }
+
+        ToolButton {
+            text: "📋"
+            font.pixelSize: 16
+            ToolTip.text: "复制节目"
+            ToolTip.visible: hovered
+            onClicked: copySelectedProgram()
+        }
+
+        ToolButton {
+            text: "⬆️"
+            font.pixelSize: 16
+            ToolTip.text: "上移节目"
+            ToolTip.visible: hovered
+            onClicked: moveProgramUp()
+        }
+
+        ToolButton {
+            text: "⬇️"
+            font.pixelSize: 16
+            ToolTip.text: "下移节目"
+            ToolTip.visible: hovered
+            onClicked: moveProgramDown()
+        }
 }
 
         }
     }
+    // 获取当前选中的节目在根节点中的索引
+    function getSelectedProgramIndex() {
+        if (treeView.selectedIndex === -1) {
+            console.warn("未选中任何节点")
+            return -1
+        }
+        var node = treeView.getNodeData(treeView.selectedIndex)
+        if (!node || !node.display) {
+            console.warn("无效的选中节点")
+            return -1
+        }
+        // 深度为 0 表示是节目（根节点）
+        if (node.display.TModel_depth !== 0) {
+            console.warn("选中的不是节目，请选中节目节点")
+            return -1
+        }
+        // 获取该节目在根节点列表中的实际行号
+        // 假设模型提供了 getProgramRow(proxyIndex) 方法，或直接使用 treeView.selectedIndex
+        // 注意：treeView.selectedIndex 是代理模型中的行号（含所有展开项），不能直接作为根节点行号
+        // 正确做法：调用模型的 rowOfNode 接口（需 C++ 实现）
+        if (playlistTreeModel.getProgramRow) {
+            return playlistTreeModel.getProgramRow(treeView.selectedIndex)
+        } else {
+            // 如果模型未暴露，可暂时使用 selectedIndex，但移动时可能出错
+            console.warn("模型未实现 getProgramRow，使用 selectedIndex 替代，移动功能可能不正确")
+            return treeView.selectedIndex
+        }
+    }
 
+    // 复制当前选中的节目
+    function copySelectedProgram() {
+        var programIndex = getSelectedProgramIndex()
+        if (programIndex === -1) return
+
+        // 调用模型的复制方法（假设存在）
+        if (playlistTreeModel.copyProgramNode) {
+            playlistTreeModel.copyProgramNode(programIndex)
+            console.log("复制节目，源索引:", programIndex)
+        } else {
+            console.error("模型未实现 copyProgramNode 方法，请在 C++ 中实现")
+            // 备用方案：手动获取节点数据并添加（需要模型支持 addNode）
+            // var nodeData = playlistTreeModel.getNodeData(programIndex)  // 需要模型提供
+            // if (nodeData) playlistTreeModel.addNode(-1, nodeData)
+        }
+    }
+
+    // 上移当前选中的节目
+    function moveProgramUp() {
+        var programIndex = getSelectedProgramIndex()
+        if (programIndex === -1) return
+        if (programIndex === 0) {
+            console.log("已在最顶部，无法上移")
+            return
+        }
+        if (playlistTreeModel.moveProgramUp) {
+            playlistTreeModel.moveProgramUp(programIndex)
+            console.log("上移节目，索引:", programIndex)
+        } else {
+            console.error("模型未实现 moveProgramUp 方法，请在 C++ 中实现")
+            // 若模型支持 moveRow 可尝试
+            // if (playlistTreeModel.moveRow) {
+            //     playlistTreeModel.moveRow(QModelIndex(), programIndex, programIndex, programIndex - 1)
+            // }
+        }
+    }
+
+    // 下移当前选中的节目
+    function moveProgramDown() {
+        var programIndex = getSelectedProgramIndex()
+        if (programIndex === -1) return
+        // 需要知道根节点总数，假设模型提供 getProgramCount 方法
+        var maxIndex = playlistTreeModel.getProgramCount ? playlistTreeModel.getProgramCount() - 1 : -1
+        if (maxIndex !== -1 && programIndex >= maxIndex) {
+            console.log("已在最底部，无法下移")
+            return
+        }
+        if (playlistTreeModel.moveProgramDown) {
+            playlistTreeModel.moveProgramDown(programIndex)
+            console.log("下移节目，索引:", programIndex)
+        } else {
+            console.error("模型未实现 moveProgramDown 方法，请在 C++ 中实现")
+        }
+    }
     // 函数：新建播放列表
     function createNewPlaylist(projectName) {
         console.log("创建播放列表:", projectName)
