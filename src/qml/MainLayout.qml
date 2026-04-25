@@ -31,6 +31,10 @@ Rectangle {
     {
         playlistPanel.saveProject()
     }
+    function loadProject(filePath) {
+        playlistPanel.loadProject(filePath)
+    }
+
     ColumnLayout {
         id:mainWindowColumnLayout
         anchors.fill: parent

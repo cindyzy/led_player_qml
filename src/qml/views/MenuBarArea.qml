@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 // import QtQuick.Layouts
 import QtQuick.Controls.Material
+import QtQuick.Dialogs
 MenuBar {
     id: menuBar
 
@@ -60,11 +61,15 @@ MenuBar {
             }
         }
         Menu {
-            title: qsTr("导入")
+            title: qsTr("打开项目")
 
             Action {
                 text: qsTr("项目文件(.sproj)")
-                onTriggered: console.log("导入项目文件")
+                onTriggered:
+                {
+                    // 打开文件选择对话框
+                    fileOpenDialog.open()
+                }
             }
 
             Action {
@@ -478,6 +483,43 @@ MenuBar {
             checkable: true
             checked: false
             onTriggered: console.log("标准版: " + checked)
+        }
+    }
+    
+    // 文件打开对话框
+    FileDialog {
+        id: fileOpenDialog
+        title: "打开项目文件"
+        nameFilters: ["项目文件 (*.sproj)", "所有文件 (*.*)"]
+        currentFolder: Qt.application.dataPath + "/projects/"
+        onAccepted: {
+            // 直接使用 selectedFile，它返回字符串路径（可能是 file:// 格式或本地路径）
+            var rawPath = fileOpenDialog.selectedFile
+            console.log("原始路径:", rawPath)
+
+            // 转换为可靠的本地文件路径（去掉 file:// 前缀，如果有）
+            var localPath = rawPath.toString()
+            if (localPath.startsWith("file://")) {
+                localPath = localPath.substring(7)  // 去掉 "file://"
+                // Windows 下路径可能形如 /C:/...，需要去掉开头的斜杠
+                if (localPath.match(/^\/[A-Za-z]:/)) {
+                    localPath = localPath.substring(1)
+                }
+            }
+            console.log("本地路径:", localPath)
+
+            // var filePath = fileOpenDialog.selectedFile
+            // console.log("选择的项目文件:", filePath)
+            // 调用MainLayout的loadProject函数
+            // parent是MenuBar, parent.parent是MainLayout
+            if (parent && parent.parent && parent.parent.loadProject) {
+                parent.parent.loadProject(localPath)
+            } else {
+                console.error("无法访问loadProject函数, parent:", parent, "parent.parent:", parent.parent)
+            }
+        }
+        onRejected: {
+            console.log("取消打开项目文件")
         }
     }
 }

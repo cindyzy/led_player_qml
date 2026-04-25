@@ -22,9 +22,9 @@ Window {
     property int selectedTabIndex: 0
     property int selectedRecentProjectIndex: 0
 
-    // 信号
-    signal accepted()
-    signal rejected()
+    // // 信号
+    // signal accepted()
+    // signal rejected()
 
     // 拖动相关属性
     property bool dragging: false
@@ -327,7 +327,12 @@ Window {
                     id: tabBar
                     Layout.fillWidth: true
                     currentIndex: selectedTabIndex
-background: "black"
+                    background: Rectangle{
+                        anchors.fill: parent
+                        color: "black"
+                    }
+
+                    // background: "black"
                     onCurrentIndexChanged: {
                         selectedTabIndex = currentIndex
                     }

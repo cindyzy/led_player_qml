@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQml.Models
-
+import "../components"
 Rectangle {
     id: playlistPanel
     color: "#252526"
@@ -19,20 +19,63 @@ Rectangle {
     property string contextMenuSelectedItem: ""
 
     // 属性：播放列表数据
-    property var playlistData: [
+    property var playlistData:[
         {
-            "name": "节目1",
-            "type": "program",
-            "duration": "0.00s",
-            "expanded": true,
-            "children": [
+            name: "节目1",
+            icon: "📁",
+            duration: "10.00s",
+            expanded: true,
+            children: [
                 {
-                    "name": "监视1",
-                    "type": "window",
-                    "duration": "0.00s",
-                    "children": []
+                    name: "视窗1",
+                    icon: "🖼",
+                    duration: "5.00s",
+                    expanded: false,
+                    children: [
+                        {
+                            name: "素材1",
+                            icon: "📄",
+                            duration: "2.50s",
+                            children: []
+                        },
+                        {
+                            name: "素材2",
+                            icon: "📄",
+                            duration: "2.50s",
+                            children: []
+                        }
+                    ]
+                },
+                {
+                    name: "视窗2",
+                    icon: "🖼",
+                    duration: "5.00s",
+                    expanded: false,
+                    children: []
                 }
             ]
+        },
+        {
+            name: "节目2",
+            icon: "📁",
+            duration: "15.00s",
+            expanded: false,
+            children: [
+                {
+                    name: "视窗1",
+                    icon: "🖼",
+                    duration: "15.00s",
+                    expanded: false,
+                    children: []
+                }
+            ]
+        },
+        {
+            name: "节目3",
+            icon: "📁",
+            duration: "20.00s",
+            expanded: false,
+            children: []
         }
     ]
 
@@ -196,301 +239,35 @@ Rectangle {
                     }
                 }
             }
-
             // 播放列表项
-            Repeater {
-                model: playlistPanel.playlistData
+            Tree {
+                id: treeView
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-                delegate: ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 2
+                // 初始化模型数据
+                model:playlistPanel.playlistData
 
-                    // 保存节目索引
-                    property int programIndex: index
+                // 事件处理
+                onItemClicked: function(item, index) {
+                    console.log("点击节点:", item.name, "索引:", index)
+                    // infoText.text = "选中: " + item.name
+                }
 
-                    // 节目项
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 25
-                        color: "#2D2D2D"
-                        radius: 4
+                onItemDoubleClicked: function(item, index) {
+                    console.log("双击节点:", item.name, "索引:", index)
+                }
 
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 8
-                            anchors.leftMargin: 20
-                            spacing: 8
+                onItemExpanded: function(item, index) {
+                    console.log("展开节点:", item.name, "索引:", index)
+                }
 
-                            // 启用开关
-                            CheckBox {
-                                id: programEnabled
-                                checked: true
-
-                                indicator: Rectangle {
-                                    implicitWidth: 16
-                                    implicitHeight: 16
-                                    color: parent.checked ? "#007ACC" : "#444444"
-                                    border.color: "#666666"
-                                    radius: 3
-
-                                    Text {
-                                        text: "ON"
-                                        color: "#FFFFFF"
-                                        font.pixelSize: 8
-                                        anchors.centerIn: parent
-                                        visible: parent.parent.checked
-                                    }
-                                }
-                            }
-
-                            // 类型图标
-                            Text {
-                                text: "▶"
-                                color: "#CCCCCC"
-                                font.pixelSize: 12
-                            }
-
-                            // 节目名称
-                            Text {
-                                text: modelData.name
-                                color: "#D4D4D4"
-                                font.pixelSize: 12
-                            }
-
-                            Item { Layout.fillWidth: true }
-
-                            // 时长
-                            Text {
-                                text: modelData.duration
-                                color: "#999999"
-                                font.pixelSize: 12
-                            }
-                        }
-
-                        // 节目项右键菜单
-                        Menu {
-                            id: programContextMenu
-                            modal: false
-                            focus: true
-
-                            MenuItem { text: "禁用"; enabled: false }
-                            MenuSeparator {}
-                            MenuItem { text: "添加视窗"; onTriggered: {/* TODO: add window */} }
-                            MenuItem { text: "窗口均分视窗"; onTriggered: {/* TODO: split window */} }
-                            MenuItem { text: "纵向均分视窗"; onTriggered: {/* TODO: split window vertical */} }
-                            MenuSeparator {}
-                            MenuItem { text: "置顶"; enabled: false }
-                            MenuItem { text: "置底"; enabled: false }
-                            MenuItem { text: "移动到..."; enabled: false }
-                            MenuItem { text: "上移"; enabled: false }
-                            MenuItem { text: "下移"; enabled: false }
-                            MenuSeparator {}
-                            MenuItem { text: "复制 (Ctrl+C)"; enabled: false }
-                            MenuItem { text: "粘贴 (Ctrl+V)"; enabled: false }
-                            MenuItem { text: "插入复制节目 (Ctrl+/T)"; enabled: false }
-                            MenuSeparator {}
-                            MenuItem { text: "重命名 (Ctrl+R)"; enabled: false }
-                            MenuItem { text: "删除 (Delete)"; enabled: false }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            acceptedButtons: Qt.RightButton
-                            onClicked: function(mouse) {
-                                if (mouse.button === Qt.RightButton) {
-                                    contextMenuProgramIndex = programIndex
-                                    contextMenuSelectedItem = "program"
-                                    programContextMenu.open()
-                                }
-                            }
-                        }
-                    }
-
-                    // 视窗项
-                    Repeater {
-                        model: modelData.children
-
-                        delegate: Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 25
-                            color: "#252526"
-                            radius: 4
-
-                            // 保存视窗索引
-                            property int windowIndex: index
-
-                            // 右键菜单
-                            Menu {
-                                id: windowContextMenu
-                                modal: false
-                                focus: true
-
-                                // 1. 添加视频/素材文件
-                                MenuItem {
-                                    text: "添加视频/素材文件"
-                                    icon.name: "A"
-                                    onTriggered: addVideoMaterial(programIndex, windowIndex)
-                                }
-
-                                // 2. 添加炫彩文字
-                                MenuItem {
-                                    text: "添加炫彩文字"
-                                    icon.name: "F"
-                                    onTriggered: addColorfulText(programIndex, windowIndex)
-                                }
-
-                                // 3. 添加屏幕录制
-                                MenuItem {
-                                    text: "添加屏幕录制"
-                                    icon.name: "F"
-                                    onTriggered: addScreenRecording(programIndex, windowIndex)
-                                }
-
-                                // 4. 添加Flash
-                                MenuItem {
-                                    text: "添加Flash"
-                                    icon.name: "G"
-                                    onTriggered: addFlash(programIndex, windowIndex)
-                                }
-
-                                // 5. 添加旋转文字
-                                MenuItem {
-                                    text: "添加旋转文字"
-                                    icon.name: "F"
-                                    onTriggered: addRotatingText(programIndex, windowIndex)
-                                }
-
-                                // 6. 添加素材集
-                                MenuItem {
-                                    text: "添加素材集"
-                                    icon.name: "F"
-                                    onTriggered: addMaterialSet(programIndex, windowIndex)
-                                }
-
-                                MenuSeparator {}
-
-                                // 7. 上移
-                                MenuItem {
-                                    text: "上移"
-                                    onTriggered: moveWindowUp(programIndex, windowIndex)
-                                }
-
-                                // 8. 下移
-                                MenuItem {
-                                    text: "下移"
-                                    onTriggered: moveWindowDown(programIndex, windowIndex)
-                                }
-
-                                MenuSeparator {}
-
-                                // 9. 复制（Ctrl+C）
-                                MenuItem {
-                                    text: "复制"
-                                    // shortcut: "Ctrl+C"
-                                    onTriggered: copyWindow(programIndex, windowIndex)
-                                }
-
-                                // 10. 粘贴（Ctrl+V）
-                                MenuItem {
-                                    text: "粘贴"
-                                    // shortcut: "Ctrl+V"
-                                    onTriggered: pasteToWindow(programIndex, windowIndex)
-                                }
-
-                                // 11. 插入复制的视图（Ctrl+T）
-                                MenuItem {
-                                    text: "插入复制的视图"
-                                    // shortcut: "Ctrl+T"
-                                    onTriggered: insertCopiedView(programIndex, windowIndex)
-                                }
-
-                                MenuSeparator {}
-
-                                // 12. 重命名（Ctrl+R）
-                                MenuItem {
-                                    text: "重命名"
-                                    // shortcut: "Ctrl+R"
-                                    onTriggered: renameWindow(programIndex, windowIndex)
-                                }
-
-                                // 13. 删除（Delete）
-                                MenuItem {
-                                    text: "删除"
-                                    // shortcut: "Delete"
-                                    onTriggered: deleteWindow(programIndex, windowIndex)
-                                }
-                            }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 8
-                                anchors.leftMargin: 40
-                                spacing: 8
-
-                                // 启用开关
-                                CheckBox {
-                                    id: windowEnabled
-                                    checked: true
-
-                                    indicator: Rectangle {
-                                        implicitWidth: 16
-                                        implicitHeight: 16
-                                        color: parent.checked ? "#007ACC" : "#444444"
-                                        border.color: "#666666"
-                                        radius: 3
-
-                                        Text {
-                                            text: "G"
-                                            color: "#FFFFFF"
-                                            font.pixelSize: 8
-                                            anchors.centerIn: parent
-                                            visible: parent.parent.checked
-                                        }
-                                    }
-                                }
-
-                                // 类型图标
-                                Text {
-                                    text: "🖼"
-                                    color: "#CCCCCC"
-                                    font.pixelSize: 12
-                                }
-
-                                // 视窗名称
-                                Text {
-                                    text: modelData.name
-                                    color: "#D4D4D4"
-                                    font.pixelSize: 12
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                // 时长
-                                Text {
-                                    text: modelData.duration
-                                    color: "#999999"
-                                    font.pixelSize: 12
-                                }
-                            }
-
-                            // 右键点击区域
-                            MouseArea {
-                                anchors.fill: parent
-                                acceptedButtons: Qt.RightButton
-
-                                onClicked: function(mouse) {
-                                    if (mouse.button === Qt.RightButton) {
-                                        contextMenuProgramIndex = programIndex
-                                        contextMenuWindowIndex = windowIndex
-                                        contextMenuSelectedItem = "window"
-                                        windowContextMenu.open()
-                                    }
-                                }
-                            }
-                        }
-                    }
+                onItemCollapsed: function(item, index) {
+                    console.log("折叠节点:", item.name, "索引:", index)
                 }
             }
+
+
         }
     }
 
@@ -506,41 +283,41 @@ Rectangle {
 
         // 添加默认的节目1和视窗1
         playlistData.push({
-            "name": "节目1",
-            "type": "program",
-            "duration": "0.00s",
-            "expanded": true,
-            "children": [
-                {
-                    "name": "监视1",
-                    "type": "window",
-                    "duration": "0.00s",
-                    "children": []
-                }
-            ]
-        })
+                              "name": "节目1",
+                              "type": "program",
+                              "duration": "0.00s",
+                              "expanded": true,
+                              "children": [
+                                  {
+                                      "name": "监视1",
+                                      "type": "window",
+                                      "duration": "0.00s",
+                                      "children": []
+                                  }
+                              ]
+                          })
     }
 
     // 函数：添加节目
     function addProgram(programName) {
         playlistData.push({
-            "name": programName || "节目" + (playlistData.length + 1),
-            "type": "program",
-            "duration": "0.00s",
-            "expanded": true,
-            "children": []
-        })
+                              "name": programName || "节目" + (playlistData.length + 1),
+                              "type": "program",
+                              "duration": "0.00s",
+                              "expanded": true,
+                              "children": []
+                          })
     }
 
     // 函数：添加视窗
     function addWindow(programIndex, windowName) {
         if (programIndex >= 0 && programIndex < playlistData.length) {
             playlistData[programIndex].children.push({
-                "name": windowName || "监视" + (playlistData[programIndex].children.length + 1),
-                "type": "window",
-                "duration": "0.00s",
-                "children": []
-            })
+                                                         "name": windowName || "监视" + (playlistData[programIndex].children.length + 1),
+                                                         "type": "window",
+                                                         "duration": "0.00s",
+                                                         "children": []
+                                                     })
         }
     }
 
@@ -592,11 +369,11 @@ Rectangle {
                 
                 // 添加素材到视窗的子项
                 window.children.push({
-                    name: materialData.name,
-                    type: materialData.type,
-                    duration: materialData.duration + "s",
-                    properties: materialData.properties
-                })
+                                         name: materialData.name,
+                                         type: materialData.type,
+                                         duration: materialData.duration + "s",
+                                         properties: materialData.properties
+                                     })
                 
                 // 触发UI更新
                 playlistData = playlistData.slice()

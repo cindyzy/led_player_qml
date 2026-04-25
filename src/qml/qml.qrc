@@ -7,7 +7,6 @@
         <file>components/PropertyField.qml</file>
         <file>components/PropertyGroup.qml</file>
         <file>components/SettingGroup.qml</file>
-        <file>components/TreeItem.qml</file>
         <file>components/WiringButton.qml</file>
         <file>components/ImgButton.qml</file>
         <file>components/ColorSwatch.qml</file>
@@ -31,5 +30,6 @@
         <file>utils/CharBitmapGenerator.qml</file>
         <file>qmldir</file>
         <file>components/MessageDialog.qml</file>
+        <file>components/Tree.qml</file>
     </qresource>
 </RCC>
