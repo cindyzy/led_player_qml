@@ -352,22 +352,23 @@ Rectangle {
                 model: playlistTreeModel
                 // 事件处理
                 onItemClicked: function(item, index) {
-                    console.log("点击节点:", item.name, "索引:", index)
+                    // console.log("点击节点:", item.name, "索引:", index)
                     // infoText.text = "选中: " + item.name
                 }
 
                 onItemDoubleClicked: function(item, index) {
                     console.log("双击节点:", item.name, "索引:", index)
+                    // playlistTreeModel.collapse(index)
                 }
 
                 onItemExpanded: function(item, index) {
                     console.log("展开节点:", item.name, "索引:", index)
-                    playlistTreeModel.expand(index)
+                    // playlistTreeModel.expand(index)
                 }
 
                 onItemCollapsed: function(item, index) {
                     console.log("折叠节点:", item.name, "索引:", index)
-                    playlistTreeModel.collapse(index)
+                    // playlistTreeModel.collapse(index)
                 }
             }
 

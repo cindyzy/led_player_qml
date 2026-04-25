@@ -108,10 +108,8 @@ Rectangle {
         if (model && model.expand) {
             model.expand(index)
         }
-        // 刷新视图
-        if (model && model.dataChanged) {
-            model.dataChanged(index, index)
-        }
+        // 刷新整个视图以更新子节点的可见性
+        listView.model = listView.model
     }
 
     // 折叠节点
@@ -119,10 +117,8 @@ Rectangle {
         if (model && model.collapse) {
             model.collapse(index)
         }
-        // 刷新视图
-        if (model && model.dataChanged) {
-            model.dataChanged(index, index)
-        }
+        // 刷新整个视图以更新子节点的可见性
+        listView.model = listView.model
     }
 
     // 展开所有节点
@@ -130,6 +126,8 @@ Rectangle {
         if (model && model.expandAll) {
             model.expandAll()
         }
+        // 刷新整个视图以更新所有节点的可见性
+        listView.model = listView.model
     }
 
     // 折叠所有节点
@@ -137,6 +135,8 @@ Rectangle {
         if (model && model.collapseAll) {
             model.collapseAll()
         }
+        // 刷新整个视图以更新所有节点的可见性
+        listView.model = listView.model
     }
 
     // 展开到指定节点
@@ -144,6 +144,8 @@ Rectangle {
         if (model && model.expandTo) {
             model.expandTo(index)
         }
+        // 刷新整个视图以更新节点的可见性
+        listView.model = listView.model
     }
 
     // 列表视图
@@ -158,9 +160,9 @@ Rectangle {
         delegate: Item {
             id: delegateItem
             width: listView.width
-            height: effectiveHeight
+            height:visible? effectiveHeight:0
             clip: effectiveHeight === 0
-
+            visible: displayData.TModel_expend
             // 获取节点数据
             property var nodeData: model
 
@@ -187,11 +189,11 @@ Rectangle {
             }
             property bool nodeExpanded: {
                 if (displayData) {
-                    if (displayData.TModel_expend !== undefined) {
-                        return displayData.TModel_expend
+                    if (displayData.TModel_childrenExpend !== undefined) {
+                        return displayData.TModel_childrenExpend
                     }
                 }
-                return false
+                return falsenodeExpanded
             }
             property bool isSelected: listView.currentIndex === index
 
@@ -217,9 +219,12 @@ Rectangle {
                         item = treeView.getNodeData(i)
                     }
 
-                    if (item && item.display && item.display.TModel_depth !== undefined &&
-                        item.display.TModel_depth === nodeDepth - 1) {
-                        return item.display.TModel_expend === true
+                    if (item) {
+                        var itemDisplay = item.display ? item.display : item
+                        if (itemDisplay.TModel_depth !== undefined && itemDisplay.TModel_depth === nodeDepth - 1) {
+                            // 使用宽松比较，因为C++ bool可能转换为不同的类型
+                            return itemDisplay.TModel_expend == true
+                        }
                     }
                 }
                 return true
