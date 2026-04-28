@@ -80,6 +80,11 @@ QList<LEDDB::WindowView> SqliteWindowViewRepository::findByProgramId(int program
     return list;
 }
 
+QList<LEDDB::WindowView> SqliteWindowViewRepository::getWindowsByProgramId(int programId) {
+    // 与 findByProgramId 功能相同，提供别名以兼容不同调用习惯
+    return findByProgramId(programId);
+}
+
 QList<LEDDB::WindowView> SqliteWindowViewRepository::findByProgramAndStatus(int programId, int status) {
     QList<LEDDB::WindowView> list;
     QSqlQuery query(DatabaseManager::instance().getDatabase());

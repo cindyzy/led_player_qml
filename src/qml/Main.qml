@@ -28,6 +28,10 @@ ApplicationWindow {
 
     // ProjectModel { id: projectData }
     // PlaylistModel { id: playlistData }
+    // SkinManager
+    // {
+    //     id:skinManager
+    // }
 
     // 主界面
     MainLayout {

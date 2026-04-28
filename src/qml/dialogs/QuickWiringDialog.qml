@@ -1273,12 +1273,7 @@ Popup {
                             }
 
                             onClicked: {
-                                console.log("快速布线设置已确认")
-                                console.log("布线宽度:", widthField.text)
-                                console.log("布线高度:", heightField.text)
-                                console.log("控制器型号:", controllerCombo.currentText)
-                                console.log("驱动点数:", drivePointsCombo.currentText)
-                                console.log("布线方向:", currentDirection)
+
                                     quickWiringConfirmed({
                                         width: parseInt(widthField.text) || 16,
                                         height: parseInt(heightField.text) || 8,

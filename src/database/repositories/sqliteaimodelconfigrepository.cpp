@@ -3,7 +3,7 @@
 // repositories/sqlite_aimodelconfig_repository.cpp
 // #include "sqlite_aimodelconfig_repository.h"
 #include "../databasemanager.h"
-#include "../utils/cryptohelper.h"
+#include "../../utils/cryptohelper.h"
 #include <QSqlQuery>
 
 using namespace Repository;
@@ -17,7 +17,7 @@ bool SqliteAiModelConfigRepository::insert(const LEDDB::AiModelConfig& config) {
     )");
     query.addBindValue(config.modelName());
     query.addBindValue(config.apiUrl());
-    query.addBindValue(CryptoHelper::encrypt(config.apiKey()));
+    query.addBindValue(CryptoHelper::aesEncrypt(config.apiKey()));
     query.addBindValue(config.timeout());
     query.addBindValue(config.offlineStrategy());
     query.addBindValue(config.enableStatus());
@@ -33,7 +33,7 @@ bool SqliteAiModelConfigRepository::update(const LEDDB::AiModelConfig& config) {
     )");
     query.addBindValue(config.modelName());
     query.addBindValue(config.apiUrl());
-    query.addBindValue(CryptoHelper::encrypt(config.apiKey()));
+    query.addBindValue(CryptoHelper::aesEncrypt(config.apiKey()));
     query.addBindValue(config.timeout());
     query.addBindValue(config.offlineStrategy());
     query.addBindValue(config.enableStatus());

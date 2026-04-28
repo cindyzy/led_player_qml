@@ -20,6 +20,9 @@ public:
     virtual std::optional<LEDDB::WindowView> findById(int windowId) = 0;
     virtual QList<LEDDB::WindowView> findByProgramId(int programId) = 0;
     virtual QList<LEDDB::WindowView> findByProgramAndStatus(int programId, int status) = 0;
+    virtual QList<LEDDB::WindowView> getWindowsByProgramId(int programId) = 0;
+
+
 };
 
 } // namespace Repository

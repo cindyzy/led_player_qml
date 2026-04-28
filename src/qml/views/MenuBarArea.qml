@@ -4,6 +4,7 @@ import QtQuick.Controls
 // import QtQuick.Layouts
 import QtQuick.Controls.Material
 import QtQuick.Dialogs
+import ".."
 MenuBar {
     id: menuBar
 
@@ -429,6 +430,23 @@ MenuBar {
     Menu {
         title: qsTr("帮助")
 
+        Action {
+            text: qsTr("默认主题")
+            shortcut: "F1"
+            onTriggered:  SkinManager.switchSkin("Default")
+        }
+
+        Action {
+            text: qsTr("蓝色主题")
+            shortcut: "F1"
+            onTriggered:  SkinManager.switchSkin("Blue")
+        }
+
+        Action {
+            text: qsTr("深色主题")
+            shortcut: "F1"
+            onTriggered:  SkinManager.switchSkin("Dark")
+        }
         Action {
             text: qsTr("用户手册")
             shortcut: "F1"

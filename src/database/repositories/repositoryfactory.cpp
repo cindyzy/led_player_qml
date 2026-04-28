@@ -1,5 +1,5 @@
 // repositories/RepositoryFactory.cpp
-#include "interfaces/RepositoryFactory.h"
+#include "repositoryfactory.h"
 #include "sqliteuserrepository.h"
 #include "sqliterolerepository.h"
 #include "sqlitepermissionrepository.h"

@@ -2,6 +2,8 @@
 // entities/aimodelconfig.cpp
 #include "aimodelconfig.h"
 #include <QSqlRecord>
+#include "../../utils/datetimehelper.h"
+
 
 namespace LEDDB {
 

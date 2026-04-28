@@ -16,6 +16,8 @@ public:
     std::optional<LEDDB::WindowView> findById(int windowId) override;
     QList<LEDDB::WindowView> findByProgramId(int programId) override;
     QList<LEDDB::WindowView> findByProgramAndStatus(int programId, int status) override;
+    QList<LEDDB::WindowView> getWindowsByProgramId(int programId) override;
+
 };
 
 } // namespace Repository

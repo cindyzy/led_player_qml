@@ -25,6 +25,7 @@ Rectangle {
         id: playlistTreeModel
         Component.onCompleted: {
             initializeModel()
+            setBusinessController(businessController)
             console.log("PlaylistTreeModel initialized")
         }
     }
@@ -305,13 +306,13 @@ RowLayout{
         // 假设模型提供了 getProgramRow(proxyIndex) 方法，或直接使用 treeView.selectedIndex
         // 注意：treeView.selectedIndex 是代理模型中的行号（含所有展开项），不能直接作为根节点行号
         // 正确做法：调用模型的 rowOfNode 接口（需 C++ 实现）
-        if (playlistTreeModel.getProgramRow) {
-            return playlistTreeModel.getProgramRow(treeView.selectedIndex)
-        } else {
+        // if (playlistTreeModel.getProgramRow) {
+            // return playlistTreeModel.getProgramRow(treeView.selectedIndex)
+        // } else {
             // 如果模型未暴露，可暂时使用 selectedIndex，但移动时可能出错
-            console.warn("模型未实现 getProgramRow，使用 selectedIndex 替代，移动功能可能不正确")
+            // console.warn("模型未实现 getProgramRow，使用 selectedIndex 替代，移动功能可能不正确")
             return treeView.selectedIndex
-        }
+        // }
     }
 
     // 复制当前选中的节目
@@ -339,16 +340,8 @@ RowLayout{
             console.log("已在最顶部，无法上移")
             return
         }
-        if (playlistTreeModel.moveProgramUp) {
-            playlistTreeModel.moveProgramUp(programIndex)
-            console.log("上移节目，索引:", programIndex)
-        } else {
-            console.error("模型未实现 moveProgramUp 方法，请在 C++ 中实现")
-            // 若模型支持 moveRow 可尝试
-            // if (playlistTreeModel.moveRow) {
-            //     playlistTreeModel.moveRow(QModelIndex(), programIndex, programIndex, programIndex - 1)
-            // }
-        }
+        playlistTreeModel.moveRow(programIndex, programIndex - 1)
+        treeView.selectedIndex =programIndex -1
     }
 
     // 下移当前选中的节目
@@ -361,12 +354,9 @@ RowLayout{
             console.log("已在最底部，无法下移")
             return
         }
-        if (playlistTreeModel.moveProgramDown) {
-            playlistTreeModel.moveProgramDown(programIndex)
-            console.log("下移节目，索引:", programIndex)
-        } else {
-            console.error("模型未实现 moveProgramDown 方法，请在 C++ 中实现")
-        }
+        playlistTreeModel.moveRow(programIndex, programIndex +1)
+        treeView.selectedIndex =programIndex +1
+
     }
     // 函数：新建播放列表
     function createNewPlaylist(projectName) {

@@ -18,6 +18,7 @@ public:
     virtual bool deleteById(int listId) = 0;
     virtual bool deleteByProjectId(int projectId) = 0;
     virtual std::optional<LEDDB::PlayList> findById(int listId) = 0;
+    virtual QList<LEDDB::PlayList> findAll() = 0;
     virtual QList<LEDDB::PlayList> findByProjectId(int projectId) = 0;
     virtual QList<LEDDB::PlayList> findByProjectAndStatus(int projectId, int status) = 0;
 };

@@ -3,7 +3,7 @@
 // repositories/sqlite_mediasource_repository.cpp
 // #include "sqlite_mediasource_repository.h"
 #include "../databasemanager.h"
-#include "../utils/datetimehelper.h"
+#include "../../utils/datetimehelper.h"
 #include <QSqlQuery>
 
 using namespace Repository;

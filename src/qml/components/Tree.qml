@@ -2,7 +2,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-
+import "../skins"
 Rectangle {
     id: treeView
     color: "transparent"

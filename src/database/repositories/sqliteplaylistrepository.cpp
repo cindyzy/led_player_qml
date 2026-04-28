@@ -3,7 +3,7 @@
 // repositories/sqlite_playlist_repository.cpp
 // #include "sqlite_playlist_repository.h"
 #include "../databasemanager.h"
-#include "../utils/datetimehelper.h"
+#include "../../utils/datetimehelper.h"
 #include <QSqlQuery>
 
 using namespace Repository;
@@ -60,6 +60,17 @@ std::optional<LEDDB::PlayList> SqlitePlayListRepository::findById(int listId) {
     query.addBindValue(listId);
     if (!query.exec() || !query.next()) return std::nullopt;
     return LEDDB::PlayList::fromSqlRecord(query.record());
+}
+
+QList<LEDDB::PlayList> SqlitePlayListRepository::findAll() {
+    QList<LEDDB::PlayList> list;
+    QSqlQuery query(DatabaseManager::instance().getDatabase());
+    query.prepare("SELECT * FROM play_list ORDER BY play_sort");
+    if (!query.exec()) return list;
+    while (query.next()) {
+        list.append(LEDDB::PlayList::fromSqlRecord(query.record()));
+    }
+    return list;
 }
 
 QList<LEDDB::PlayList> SqlitePlayListRepository::findByProjectId(int projectId) {

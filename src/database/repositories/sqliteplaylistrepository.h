@@ -16,6 +16,7 @@ public:
     std::optional<LEDDB::PlayList> findById(int listId) override;
     QList<LEDDB::PlayList> findByProjectId(int projectId) override;
     QList<LEDDB::PlayList> findByProjectAndStatus(int projectId, int status) override;
+    QList<LEDDB::PlayList> findAll() override;
 };
 
 } // namespace Repository

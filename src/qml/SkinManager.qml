@@ -1,8 +1,8 @@
 // SkinManager.qml - 皮肤管理器
 pragma Singleton
-import QtQuick 2.15
-import Qt.labs.settings 1.1
+import QtQuick
 
+// import Qt.labs.settings
 QtObject {
     id: skinManager
 
@@ -19,18 +19,19 @@ QtObject {
     // 皮肤变更信号
     signal skinChanged(string skinName)
 
-    // 设置存储 —— 以属性的方式声明
-    property Settings skinSettings: Settings {
-        id: settingsObj
-        category: "Skin"
-        property string currentSkinName: "Default"
-    }
+    // // 设置存储 —— 以属性的方式声明
+    // property Settings skinSettings: Settings {
+    //     id: settingsObj
+    //     category: "Skin"
+    //     property string currentSkinName: "Default"
+    // }
 
     // 初始化
     Component.onCompleted: {
         loadAvailableSkins()
-        var skinName = skinSettings.currentSkinName || default_skin
-        loadSkin(skinName)
+        // var skinName = skinSettings.currentSkinName || default_skin
+        // loadSkin(skinName)
+        loadSkin("Default")
     }
 
     // 加载可用皮肤

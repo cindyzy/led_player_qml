@@ -1,7 +1,7 @@
 module LedPlayer
 Main 1.0 Main.qml
 MainLayout 1.0 MainLayout.qml
-ThemeManager 1.0 ThemeManager.qml
+singleton SkinManager 1.0 SkinManager.qml
 
 # Components
 MenuButton 1.0 components/MenuButton.qml

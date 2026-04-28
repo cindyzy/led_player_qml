@@ -2,7 +2,7 @@
     <qresource prefix="/">
         <file>Main.qml</file>
         <file>MainLayout.qml</file>
-        <file>ThemeManager.qml</file>
+        <file>SkinManager.qml</file>
         <file>components/MenuButton.qml</file>
         <file>components/PropertyField.qml</file>
         <file>components/PropertyGroup.qml</file>
@@ -31,5 +31,13 @@
         <file>qmldir</file>
         <file>components/MessageDialog.qml</file>
         <file>components/Tree.qml</file>
+        <file>views/SideNavigationPanel.qml</file>
+        <file>components/NavMenuItem.qml</file>
+        <file>SkinConstants.js</file>
+        <file>skins/Default/Skin.qml</file>
+        <file>skins/BaseSkin.qml</file>
+        <file>components/SkinSwitcher.qml</file>
+        <file>skins/Dark/Skin.qml</file>
+        <file>skins/Blue/Skin.qml</file>
     </qresource>
 </RCC>
