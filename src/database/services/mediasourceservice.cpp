@@ -17,16 +17,34 @@ bool MediaSourceService::addMedia(const MediaSource& media, const QString& opera
     MediaSource newMedia = media;
     newMedia.setCreateTime(QDateTime::currentDateTime());
     bool success = mediaRepo->insert(newMedia);
-    AuditLogService().logOperation(operatorUser, "添加素材",
-                                   QString("向视窗 %1 添加素材 %2").arg(media.windowId()).arg(media.filePath()), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "添加素材", success ? "成功" : "失败",
+                                   QString("向视窗 %1 添加素材 %2").arg(media.windowId()).arg(media.filePath()),
+                                   "media_source", newMedia.mediaId());
     return success;
 }
 
 bool MediaSourceService::updateMedia(const MediaSource& media, const QString& operatorUser) {
     auto mediaRepo = RepositoryFactory::createMediaSourceRepository();
     bool success = mediaRepo->update(media);
-    AuditLogService().logOperation(operatorUser, "更新素材",
-                                   QString("更新素材 ID=%1").arg(media.mediaId()), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "更新素材", success ? "成功" : "失败",
+                                   QString("更新素材 ID=%1").arg(media.mediaId()),
+                                   "media_source", media.mediaId());
     return success;
 }
 
@@ -34,9 +52,18 @@ bool MediaSourceService::removeMedia(int mediaId, const QString& operatorUser) {
     auto mediaRepo = RepositoryFactory::createMediaSourceRepository();
     auto media = mediaRepo->findById(mediaId);
     if (!media) return false;
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
     bool success = mediaRepo->deleteById(mediaId);
-    AuditLogService().logOperation(operatorUser, "删除素材",
-                                   QString("删除素材 %1").arg(media->filePath()), success ? "成功" : "失败");
+    AuditLogService().logOperation(userId, "删除素材", success ? "成功" : "失败",
+                                   QString("删除素材 %1").arg(media->filePath()),
+                                   "media_source", mediaId);
     return success;
 }
 
@@ -52,6 +79,13 @@ QList<MediaSource> MediaSourceService::getMediaByWindow(int windowId) {
 
 bool MediaSourceService::reorderMedia(int windowId, const QList<int>& mediaIdsInOrder, const QString& operatorUser) {
     if (mediaIdsInOrder.isEmpty()) return true;
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
 
     DatabaseManager& dbMgr = DatabaseManager::instance();
     if (!dbMgr.beginTransaction()) return false;
@@ -72,13 +106,15 @@ bool MediaSourceService::reorderMedia(int windowId, const QList<int>& mediaIdsIn
     }
 
     if (success && dbMgr.commitTransaction()) {
-        AuditLogService().logOperation(operatorUser, "重排素材",
-                                       QString("视窗 %1 素材顺序已调整").arg(windowId), "成功");
+        AuditLogService().logOperation(userId, "重排素材", "成功",
+                                       QString("视窗 %1 素材顺序已调整").arg(windowId),
+                                       "media_source", windowId);
         return true;
     } else {
         dbMgr.rollbackTransaction();
-        AuditLogService().logOperation(operatorUser, "重排素材",
-                                       QString("视窗 %1 素材顺序调整失败").arg(windowId), "失败");
+        AuditLogService().logOperation(userId, "重排素材", "失败",
+                                       QString("视窗 %1 素材顺序调整失败").arg(windowId),
+                                       "media_source", windowId);
         return false;
     }
 }

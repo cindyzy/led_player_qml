@@ -18,8 +18,16 @@ bool ProgramInfoService::createProgram(const ProgramInfo& program, const QString
     newProg.setCreateTime(QDateTime::currentDateTime());
     newProg.setUpdateTime(QDateTime::currentDateTime());
     bool success = progRepo->insert(newProg);
-    AuditLogService().logOperation(operatorUser, "创建节目",
-                                   QString("在播放列表 %1 下创建节目 %2").arg(program.listId()).arg(program.programName()), success ? "成功" : "失败");
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "创建节目", success ? "成功" : "失败",
+                                   QString("在播放列表 %1 下创建节目 %2").arg(program.listId()).arg(program.programName()),
+                                   "program_info", newProg.programId());
     return success;
 }
 
@@ -28,8 +36,17 @@ bool ProgramInfoService::updateProgram(const ProgramInfo& program, const QString
     ProgramInfo updated = program;
     updated.setUpdateTime(QDateTime::currentDateTime());
     bool success = progRepo->update(updated);
-    AuditLogService().logOperation(operatorUser, "更新节目",
-                                   QString("更新节目 ID=%1").arg(program.programId()), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "更新节目", success ? "成功" : "失败",
+                                   QString("更新节目 ID=%1").arg(program.programId()),
+                                   "program_info", program.programId());
     return success;
 }
 
@@ -37,6 +54,13 @@ bool ProgramInfoService::deleteProgram(int programId, const QString& operatorUse
     auto progRepo = RepositoryFactory::createProgramInfoRepository();
     auto program = progRepo->findById(programId);
     if (!program) return false;
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
 
     auto viewRepo = RepositoryFactory::createWindowViewRepository();
     auto mediaRepo = RepositoryFactory::createMediaSourceRepository();
@@ -52,13 +76,15 @@ bool ProgramInfoService::deleteProgram(int programId, const QString& operatorUse
     bool success = progRepo->deleteById(programId);
 
     if (success && dbMgr.commitTransaction()) {
-        AuditLogService().logOperation(operatorUser, "删除节目",
-                                       QString("删除节目 %1").arg(program->programName()), "成功");
+        AuditLogService().logOperation(userId, "删除节目", "成功",
+                                       QString("删除节目 %1").arg(program->programName()),
+                                       "program_info", programId);
         return true;
     } else {
         dbMgr.rollbackTransaction();
-        AuditLogService().logOperation(operatorUser, "删除节目",
-                                       QString("删除节目 %1 失败").arg(program->programName()), "失败");
+        AuditLogService().logOperation(userId, "删除节目", "失败",
+                                       QString("删除节目 %1 失败").arg(program->programName()),
+                                       "program_info", programId);
         return false;
     }
 }
@@ -81,6 +107,13 @@ QList<ProgramInfo> ProgramInfoService::getProgramsByListId(int listId) {
 bool ProgramInfoService::reorderPrograms(int listId, const QList<int>& programIdsInOrder, const QString& operatorUser) {
     if (programIdsInOrder.isEmpty()) return true;
 
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
     auto& dbMgr = DatabaseManager::instance();
     if (!dbMgr.beginTransaction()) return false;
 
@@ -101,13 +134,15 @@ bool ProgramInfoService::reorderPrograms(int listId, const QList<int>& programId
     }
 
     if (success && dbMgr.commitTransaction()) {
-        AuditLogService().logOperation(operatorUser, "重排节目",
-                                       QString("播放列表 %1 节目顺序已调整").arg(listId), "成功");
+        AuditLogService().logOperation(userId, "重排节目", "成功",
+                                       QString("播放列表 %1 节目顺序已调整").arg(listId),
+                                       "program_info", listId);
         return true;
     } else {
         dbMgr.rollbackTransaction();
-        AuditLogService().logOperation(operatorUser, "重排节目",
-                                       QString("播放列表 %1 节目顺序调整失败").arg(listId), "失败");
+        AuditLogService().logOperation(userId, "重排节目", "失败",
+                                       QString("播放列表 %1 节目顺序调整失败").arg(listId),
+                                       "program_info", listId);
         return false;
     }
 }

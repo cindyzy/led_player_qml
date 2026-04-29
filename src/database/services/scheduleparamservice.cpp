@@ -18,8 +18,16 @@ bool ScheduleParamService::saveScheduleParam(const ScheduleParam& param, const Q
     } else {
         success = schedRepo->update(param);
     }
-    AuditLogService().logOperation(operatorUser, "保存调度参数",
-                                   QString("场景类型 %1，阈值=%2").arg(param.sceneType()).arg(param.sceneThreshold()), success ? "成功" : "失败");
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "保存调度参数", success ? "成功" : "失败",
+                                   QString("场景类型 %1，阈值=%2").arg(param.sceneType()).arg(param.sceneThreshold()),
+                                   "schedule_param", param.scheduleId());
     return success;
 }
 
@@ -27,9 +35,18 @@ bool ScheduleParamService::deleteScheduleParam(int scheduleId, const QString& op
     auto schedRepo = RepositoryFactory::createScheduleParamRepository();
     auto param = schedRepo->findById(scheduleId);
     if (!param) return false;
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
     bool success = schedRepo->deleteById(scheduleId);
-    AuditLogService().logOperation(operatorUser, "删除调度参数",
-                                   QString("删除场景 %1 的调度参数").arg(param->sceneType()), success ? "成功" : "失败");
+    AuditLogService().logOperation(userId, "删除调度参数", success ? "成功" : "失败",
+                                   QString("删除场景 %1 的调度参数").arg(param->sceneType()),
+                                   "schedule_param", scheduleId);
     return success;
 }
 

@@ -18,8 +18,16 @@ bool PlayListService::createPlayList(const PlayList& playlist, const QString& op
     newPl.setCreateTime(QDateTime::currentDateTime());
     newPl.setUpdateTime(QDateTime::currentDateTime());
     bool success = plRepo->insert(newPl);
-    AuditLogService().logOperation(operatorUser, "创建播放列表",
-                                   QString("在项目 %1 下创建播放列表 %2").arg(playlist.projectId()).arg(playlist.listName()), success ? "成功" : "失败");
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "创建播放列表", success ? "成功" : "失败",
+                                   QString("在项目 %1 下创建播放列表 %2").arg(playlist.projectId()).arg(playlist.listName()),
+                                   "play_list", newPl.listId());
     return success;
 }
 
@@ -28,8 +36,17 @@ bool PlayListService::updatePlayList(const PlayList& playlist, const QString& op
     PlayList updated = playlist;
     updated.setUpdateTime(QDateTime::currentDateTime());
     bool success = plRepo->update(updated);
-    AuditLogService().logOperation(operatorUser, "更新播放列表",
-                                   QString("更新播放列表 ID=%1").arg(playlist.listId()), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "更新播放列表", success ? "成功" : "失败",
+                                   QString("更新播放列表 ID=%1").arg(playlist.listId()),
+                                   "play_list", playlist.listId());
     return success;
 }
 
@@ -37,6 +54,13 @@ bool PlayListService::deletePlayList(int listId, const QString& operatorUser) {
     auto plRepo = RepositoryFactory::createPlayListRepository();
     auto playlist = plRepo->findById(listId);
     if (!playlist) return false;
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
 
     // 删除列表前，先删除其下所有节目（及其下级内容）
     auto progRepo = RepositoryFactory::createProgramInfoRepository();
@@ -58,13 +82,15 @@ bool PlayListService::deletePlayList(int listId, const QString& operatorUser) {
     bool success = plRepo->deleteById(listId);
 
     if (success && dbMgr.commitTransaction()) {
-        AuditLogService().logOperation(operatorUser, "删除播放列表",
-                                       QString("删除播放列表 %1").arg(playlist->listName()), "成功");
+        AuditLogService().logOperation(userId, "删除播放列表", "成功",
+                                       QString("删除播放列表 %1").arg(playlist->listName()),
+                                       "play_list", listId);
         return true;
     } else {
         dbMgr.rollbackTransaction();
-        AuditLogService().logOperation(operatorUser, "删除播放列表",
-                                       QString("删除播放列表 %1 失败").arg(playlist->listName()), "失败");
+        AuditLogService().logOperation(userId, "删除播放列表", "失败",
+                                       QString("删除播放列表 %1 失败").arg(playlist->listName()),
+                                       "play_list", listId);
         return false;
     }
 }
@@ -92,6 +118,13 @@ QList<PlayList> PlayListService::getPlayListsByProjectId(int projectId) {
 bool PlayListService::reorderPlayLists(int projectId, const QList<int>& listIdsInOrder, const QString& operatorUser) {
     if (listIdsInOrder.isEmpty()) return true;
 
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
     auto& dbMgr = DatabaseManager::instance();
     if (!dbMgr.beginTransaction()) return false;
 
@@ -112,13 +145,15 @@ bool PlayListService::reorderPlayLists(int projectId, const QList<int>& listIdsI
     }
 
     if (success && dbMgr.commitTransaction()) {
-        AuditLogService().logOperation(operatorUser, "重排播放列表",
-                                       QString("项目 %1 播放列表顺序已调整").arg(projectId), "成功");
+        AuditLogService().logOperation(userId, "重排播放列表", "成功",
+                                       QString("项目 %1 播放列表顺序已调整").arg(projectId),
+                                       "play_list", projectId);
         return true;
     } else {
         dbMgr.rollbackTransaction();
-        AuditLogService().logOperation(operatorUser, "重排播放列表",
-                                       QString("项目 %1 播放列表顺序调整失败").arg(projectId), "失败");
+        AuditLogService().logOperation(userId, "重排播放列表", "失败",
+                                       QString("项目 %1 播放列表顺序调整失败").arg(projectId),
+                                       "play_list", projectId);
         return false;
     }
 }

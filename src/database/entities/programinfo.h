@@ -13,7 +13,7 @@ public:
     ProgramInfo() = default;
     ProgramInfo(int programId, int listId, const QString& programName, int programSort,
                 double playDuration, double intervalTime, int status,
-                const QDateTime& createTime, const QDateTime& updateTime);
+                const QDateTime& createTime, const QDateTime& updateTime, const QDateTime& startTime, const QDateTime& endTime);
 
     int programId() const { return m_programId; }
     void setProgramId(int id) { m_programId = id; }
@@ -42,7 +42,14 @@ public:
     QDateTime updateTime() const { return m_updateTime; }
     void setUpdateTime(const QDateTime& dt) { m_updateTime = dt; }
 
+    QDateTime startTime() const{ return m_startTime; }
+    void setStartTime(const QDateTime &dt){ m_startTime = dt; }
+
+    QDateTime endTime() const{ return m_endTime; }
+    void setEndTime(const QDateTime &dt){ m_endTime = dt; }
+
     static ProgramInfo fromSqlRecord(const QSqlRecord& record);
+
 
 private:
     int m_programId = 0;
@@ -54,6 +61,8 @@ private:
     int m_status = 1;
     QDateTime m_createTime;
     QDateTime m_updateTime;
+    QDateTime m_startTime;
+    QDateTime m_endTime;
 };
 
 } // namespace LEDDB

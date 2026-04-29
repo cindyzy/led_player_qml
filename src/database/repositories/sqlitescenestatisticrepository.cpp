@@ -50,6 +50,16 @@ QList<LEDDB::SceneStatistic> SqliteSceneStatisticRepository::findLatest(int limi
     return list;
 }
 
+QList<LEDDB::SceneStatistic> SqliteSceneStatisticRepository::findByProjectId(int projectId) {
+    QList<LEDDB::SceneStatistic> list;
+    QSqlQuery query(DatabaseManager::instance().getDatabase());
+    query.prepare("SELECT * FROM scene_statistics WHERE project_id = ? ORDER BY collect_time DESC");
+    query.addBindValue(projectId);
+    if (!query.exec()) return list;
+    while (query.next()) list.append(LEDDB::SceneStatistic::fromSqlRecord(query.record()));
+    return list;
+}
+
 bool SqliteSceneStatisticRepository::archiveOlderThan(const QDateTime& before) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare("DELETE FROM scene_statistics WHERE collect_time < ?");

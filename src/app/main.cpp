@@ -7,6 +7,19 @@
 #include "../utils/charbitmapgenerator.h"
 #include "../utils/filehelper.h"
 #include "../core/models/PlaylistTreeModel.h"
+#include "../core/models/entity/UserModel.h"
+#include "../core/models/entity/RoleModel.h"
+#include "../core/models/entity/PermissionModel.h"
+#include "../core/models/entity/LedDeviceModel.h"
+#include "../core/models/entity/ProjectConfigModel.h"
+#include "../core/models/entity/PlayListModel.h"
+#include "../core/models/entity/ProgramInfoModel.h"
+#include "../core/models/entity/WindowViewModel.h"
+#include "../core/models/entity/MediaSourceModel.h"
+#include "../core/models/entity/ScheduleParamModel.h"
+#include "../core/models/entity/AiModelConfigModel.h"
+#include "../core/models/entity/SceneStatisticModel.h"
+#include "../core/models/entity/AuditLogModel.h"
 #include <QQmlContext>
 #include <QDebug>
 #include <QStandardPaths>
@@ -48,6 +61,59 @@ int main(int argc, char *argv[])
     PlaylistTreeModel* playlistTreeModel = new PlaylistTreeModel(&engine);
     playlistTreeModel->setBusinessController(businessController);
     engine.rootContext()->setContextProperty("playlistTreeModel", playlistTreeModel);
+
+    // 创建所有 entity Model 实例并设置 BusinessController
+    UserModel* userModel = new UserModel(&engine);
+    userModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("userModel", userModel);
+
+    RoleModel* roleModel = new RoleModel(&engine);
+    roleModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("roleModel", roleModel);
+
+    PermissionModel* permissionModel = new PermissionModel(&engine);
+    permissionModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("permissionModel", permissionModel);
+
+    LedDeviceModel* ledDeviceModel = new LedDeviceModel(&engine);
+    ledDeviceModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("ledDeviceModel", ledDeviceModel);
+
+    ProjectConfigModel* projectConfigModel = new ProjectConfigModel(&engine);
+    projectConfigModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("projectConfigModel", projectConfigModel);
+
+    PlayListModel* playListModel = new PlayListModel(&engine);
+    playListModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("playListModel", playListModel);
+
+    ProgramInfoModel* programInfoModel = new ProgramInfoModel(&engine);
+    programInfoModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("programInfoModel", programInfoModel);
+
+    WindowViewModel* windowViewModel = new WindowViewModel(&engine);
+    windowViewModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("windowViewModel", windowViewModel);
+
+    MediaSourceModel* mediaSourceModel = new MediaSourceModel(&engine);
+    mediaSourceModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("mediaSourceModel", mediaSourceModel);
+
+    ScheduleParamModel* scheduleParamModel = new ScheduleParamModel(&engine);
+    scheduleParamModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("scheduleParamModel", scheduleParamModel);
+
+    AiModelConfigModel* aiModelConfigModel = new AiModelConfigModel(&engine);
+    aiModelConfigModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("aiModelConfigModel", aiModelConfigModel);
+
+    SceneStatisticModel* sceneStatisticModel = new SceneStatisticModel(&engine);
+    sceneStatisticModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("sceneStatisticModel", sceneStatisticModel);
+
+    AuditLogModel* auditLogModel = new AuditLogModel(&engine);
+    auditLogModel->setBusinessController(businessController);
+    engine.rootContext()->setContextProperty("auditLogModel", auditLogModel);
 
     // 添加qrc资源路径
     engine.addImportPath("qrc:/");

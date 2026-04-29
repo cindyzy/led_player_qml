@@ -24,6 +24,11 @@ QList<SceneStatistic> SceneStatisticService::getStatisticsByTimeRange(const QDat
     return statRepo->findByTimeRange(start, end);
 }
 
+QList<SceneStatistic> SceneStatisticService::getStatisticsByProject(int projectId) {
+    auto statRepo = RepositoryFactory::createSceneStatisticRepository();
+    return statRepo->findByProjectId(projectId);
+}
+
 QList<SceneStatistic> SceneStatisticService::getLatestStatistics(int limit) {
     auto statRepo = RepositoryFactory::createSceneStatisticRepository();
     return statRepo->findLatest(limit);

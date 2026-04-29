@@ -20,16 +20,6 @@ Rectangle {
     property int contextMenuWindowIndex: -1
     property string contextMenuSelectedItem: ""
 
-    // 创建PlaylistTreeModel实例
-    PlaylistTreeModel {
-        id: playlistTreeModel
-        Component.onCompleted: {
-            initializeModel()
-            setBusinessController(businessController)
-            console.log("PlaylistTreeModel initialized")
-        }
-    }
-
     // 属性：播放列表数据 - 适配Tree.qml和C++ TreeViewModel
 
     ColumnLayout {

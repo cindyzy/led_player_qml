@@ -11,13 +11,13 @@ class SqliteLedDeviceRepository : public ILedDeviceRepository {
 public:
     bool insert(const LEDDB::LedDevice& device) override;
     bool update(const LEDDB::LedDevice& device) override;
-    bool deleteById(const QString& deviceId) override;
-    std::optional<LEDDB::LedDevice> findById(const QString& deviceId) override;
+    bool deleteById(int deviceId) override;
+    std::optional<LEDDB::LedDevice> findById(int deviceId) override;
     QList<LEDDB::LedDevice> findByOnlineStatus(int onlineStatus) override;
     QList<LEDDB::LedDevice> findByIp(const QString& ip) override;
     QList<LEDDB::LedDevice> findAll(int offset = 0, int limit = 100) override;
-    bool updateBrightness(const QString& deviceId, int brightness) override;
-    bool updateOnlineStatus(const QString& deviceId, int status) override;
+    bool updateBrightness(int deviceId, int brightness) override;
+    bool updateOnlineStatus(int deviceId, int status) override;
 };
 
 } // namespace Repository

@@ -1282,6 +1282,7 @@ Popup {
                                         direction: currentDirection
                                     })
                                 wiringDialog.close()
+                                playListModel.addPlayList(0,"",0,0)
                             }
                         }
 

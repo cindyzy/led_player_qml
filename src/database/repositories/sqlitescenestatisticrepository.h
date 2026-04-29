@@ -13,6 +13,7 @@ public:
     bool deleteById(int statId) override;
     QList<LEDDB::SceneStatistic> findByTimeRange(const QDateTime& start, const QDateTime& end) override;
     QList<LEDDB::SceneStatistic> findLatest(int limit = 100) override;
+    QList<LEDDB::SceneStatistic> findByProjectId(int projectId) override;
     bool archiveOlderThan(const QDateTime& before) override;
 };
 

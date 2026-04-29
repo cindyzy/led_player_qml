@@ -17,14 +17,30 @@ bool ProjectConfigService::createProject(const ProjectConfig& project, const QSt
     ProjectConfig newProj = project;
     newProj.setCreateTime(QDateTime::currentDateTime());
     bool success = projRepo->insert(newProj);
-    AuditLogService().logOperation(operatorUser, "创建项目", QString("创建项目 %1").arg(project.projectName()), success ? "成功" : "失败");
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+    AuditLogService().logOperation(userId, "创建项目", success ? "成功" : "失败",
+                                   QString("创建项目 %1").arg(project.projectName()),
+                                   "project_config", newProj.projectId());
     return success;
 }
 
 bool ProjectConfigService::updateProject(const ProjectConfig& project, const QString& operatorUser) {
     auto projRepo = RepositoryFactory::createProjectConfigRepository();
     bool success = projRepo->update(project);
-    AuditLogService().logOperation(operatorUser, "更新项目", QString("更新项目 %1").arg(project.projectName()), success ? "成功" : "失败");
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+    AuditLogService().logOperation(userId, "更新项目", success ? "成功" : "失败",
+                                   QString("更新项目 %1").arg(project.projectName()),
+                                   "project_config", project.projectId());
     return success;
 }
 
@@ -33,17 +49,27 @@ bool ProjectConfigService::deleteProject(int projectId, const QString& operatorU
     auto project = projRepo->findById(projectId);
     if (!project) return false;
 
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
     // 检查是否存在关联的播放列表（若有，不能简单删除）
     auto plRepo = RepositoryFactory::createPlayListRepository();
     auto playLists = plRepo->findByProjectId(projectId);
     if (!playLists.isEmpty()) {
-        AuditLogService().logOperation(operatorUser, "删除项目",
-                                       QString("项目 %1 仍有播放列表，无法删除").arg(project->projectName()), "失败");
+        AuditLogService().logOperation(userId, "删除项目", "失败",
+                                       QString("项目 %1 仍有播放列表，无法删除").arg(project->projectName()),
+                                       "project_config", projectId);
         return false;
     }
 
     bool success = projRepo->deleteById(projectId);
-    AuditLogService().logOperation(operatorUser, "删除项目", QString("删除项目 %1").arg(project->projectName()), success ? "成功" : "失败");
+    AuditLogService().logOperation(userId, "删除项目", success ? "成功" : "失败",
+                                   QString("删除项目 %1").arg(project->projectName()),
+                                   "project_config", projectId);
     return success;
 }
 
@@ -52,9 +78,17 @@ bool ProjectConfigService::cascadeDeleteProject(int projectId, const QString& op
     auto project = projRepo->findById(projectId);
     if (!project) return false;
 
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
     bool success = projRepo->cascadeDeleteById(projectId);
-    AuditLogService().logOperation(operatorUser, "级联删除项目",
-                                   QString("级联删除项目 %1 及所有关联内容").arg(project->projectName()), success ? "成功" : "失败");
+    AuditLogService().logOperation(userId, "级联删除项目", success ? "成功" : "失败",
+                                   QString("级联删除项目 %1 及所有关联内容").arg(project->projectName()),
+                                   "project_config", projectId);
     return success;
 }
 

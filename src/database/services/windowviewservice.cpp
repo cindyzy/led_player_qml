@@ -18,8 +18,17 @@ bool WindowViewService::createWindow(const WindowView& window, const QString& op
     newWin.setCreateTime(QDateTime::currentDateTime());
     newWin.setUpdateTime(QDateTime::currentDateTime());
     bool success = viewRepo->insert(newWin);
-    AuditLogService().logOperation(operatorUser, "创建视窗",
-                                   QString("在节目 %1 下创建视窗 %2").arg(window.programId()).arg(window.windowName()), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "创建视窗", success ? "成功" : "失败",
+                                   QString("在节目 %1 下创建视窗 %2").arg(window.programId()).arg(window.windowName()),
+                                   "window_view", newWin.windowId());
     return success;
 }
 
@@ -28,8 +37,17 @@ bool WindowViewService::updateWindow(const WindowView& window, const QString& op
     WindowView updated = window;
     updated.setUpdateTime(QDateTime::currentDateTime());
     bool success = viewRepo->update(updated);
-    AuditLogService().logOperation(operatorUser, "更新视窗",
-                                   QString("更新视窗 ID=%1").arg(window.windowId()), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "更新视窗", success ? "成功" : "失败",
+                                   QString("更新视窗 ID=%1").arg(window.windowId()),
+                                   "window_view", window.windowId());
     return success;
 }
 
@@ -37,6 +55,13 @@ bool WindowViewService::deleteWindow(int windowId, const QString& operatorUser) 
     auto viewRepo = RepositoryFactory::createWindowViewRepository();
     auto window = viewRepo->findById(windowId);
     if (!window) return false;
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
 
     auto mediaRepo = RepositoryFactory::createMediaSourceRepository();
 
@@ -47,13 +72,15 @@ bool WindowViewService::deleteWindow(int windowId, const QString& operatorUser) 
     bool success = viewRepo->deleteById(windowId);
 
     if (success && dbMgr.commitTransaction()) {
-        AuditLogService().logOperation(operatorUser, "删除视窗",
-                                       QString("删除视窗 %1").arg(window->windowName()), "成功");
+        AuditLogService().logOperation(userId, "删除视窗", "成功",
+                                       QString("删除视窗 %1").arg(window->windowName()),
+                                       "window_view", windowId);
         return true;
     } else {
         dbMgr.rollbackTransaction();
-        AuditLogService().logOperation(operatorUser, "删除视窗",
-                                       QString("删除视窗 %1 失败").arg(window->windowName()), "失败");
+        AuditLogService().logOperation(userId, "删除视窗", "失败",
+                                       QString("删除视窗 %1 失败").arg(window->windowName()),
+                                       "window_view", windowId);
         return false;
     }
 }
@@ -76,6 +103,13 @@ QList<WindowView> WindowViewService::getWindowsByProgramId(int programId) {
 bool WindowViewService::reorderWindows(int programId, const QList<int>& windowIdsInOrder, const QString& operatorUser) {
     if (windowIdsInOrder.isEmpty()) return true;
 
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
     auto& dbMgr = DatabaseManager::instance();
     if (!dbMgr.beginTransaction()) return false;
 
@@ -96,13 +130,15 @@ bool WindowViewService::reorderWindows(int programId, const QList<int>& windowId
     }
 
     if (success && dbMgr.commitTransaction()) {
-        AuditLogService().logOperation(operatorUser, "重排视窗",
-                                       QString("节目 %1 视窗层级已调整").arg(programId), "成功");
+        AuditLogService().logOperation(userId, "重排视窗", "成功",
+                                       QString("节目 %1 视窗层级已调整").arg(programId),
+                                       "window_view", programId);
         return true;
     } else {
         dbMgr.rollbackTransaction();
-        AuditLogService().logOperation(operatorUser, "重排视窗",
-                                       QString("节目 %1 视窗层级调整失败").arg(programId), "失败");
+        AuditLogService().logOperation(userId, "重排视窗", "失败",
+                                       QString("节目 %1 视窗层级调整失败").arg(programId),
+                                       "window_view", programId);
         return false;
     }
 }

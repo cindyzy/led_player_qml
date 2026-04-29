@@ -71,7 +71,8 @@ bool DatabaseManager::createTables()
             role_id INTEGER NOT NULL DEFAULT 0,
             status INTEGER NOT NULL DEFAULT 1,
             create_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            last_login_time TEXT
+            last_login_time TEXT,
+            update_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
     )";
 
@@ -215,10 +216,17 @@ bool DatabaseManager::createTables()
     createStmts << R"(
         CREATE TABLE IF NOT EXISTS scene_statistics (
             stat_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL DEFAULT 0,
+            scene_type TEXT NOT NULL,
             collect_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             env_brightness INTEGER NOT NULL DEFAULT 0,
             scene_status TEXT,
-            schedule_result TEXT
+            schedule_result TEXT,
+            play_count INTEGER NOT NULL DEFAULT 0,
+            total_duration REAL NOT NULL DEFAULT 0.0,
+            stat_date TEXT,
+            create_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            update_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
     )";
 
@@ -226,11 +234,15 @@ bool DatabaseManager::createTables()
     createStmts << R"(
         CREATE TABLE IF NOT EXISTS sys_audit_log (
             log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            operator_user TEXT NOT NULL,
-            operate_type TEXT NOT NULL,
-            operate_content TEXT NOT NULL,
+            user_id INTEGER NOT NULL DEFAULT 0,
+            operation_type TEXT NOT NULL,
             operate_result TEXT NOT NULL,
-            operate_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            operate_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            operation_desc TEXT,
+            target_table TEXT,
+            target_id INTEGER NOT NULL DEFAULT 0,
+            client_ip TEXT,
+            create_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
     )";
 
@@ -287,13 +299,17 @@ void DatabaseManager::createIndexes()
     query.exec("CREATE INDEX IF NOT EXISTS idx_ai_enable ON ai_model_config(enable_status)");
 
     // 场景统计索引
+    query.exec("CREATE INDEX IF NOT EXISTS idx_scene_project ON scene_statistics(project_id)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_scene_time ON scene_statistics(collect_time)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_scene_status ON scene_statistics(scene_status)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_scene_type ON scene_statistics(scene_type)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_scene_date ON scene_statistics(stat_date)");
 
     // 审计日志索引
-    query.exec("CREATE INDEX IF NOT EXISTS idx_audit_user ON sys_audit_log(operator_user)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_audit_user ON sys_audit_log(user_id)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_audit_time ON sys_audit_log(operate_time)");
-    query.exec("CREATE INDEX IF NOT EXISTS idx_audit_type ON sys_audit_log(operate_type)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_audit_type ON sys_audit_log(operation_type)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_audit_target ON sys_audit_log(target_table, target_id)");
 }
 
 bool DatabaseManager::beginTransaction()

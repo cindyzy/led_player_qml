@@ -13,6 +13,7 @@ public:
 
     bool recordSceneData(const LEDDB::SceneStatistic& stat);
     QList<LEDDB::SceneStatistic> getStatisticsByTimeRange(const QDateTime& start, const QDateTime& end);
+    QList<LEDDB::SceneStatistic> getStatisticsByProject(int projectId);
     QList<LEDDB::SceneStatistic> getLatestStatistics(int limit = 100);
     bool archiveOldData(int daysToKeep);  // 删除超过指定天数的数据
 };

@@ -11,49 +11,62 @@ namespace LEDDB {
 class MediaSource {
 public:
     MediaSource() = default;
-    MediaSource(int mediaId, const QString& filePath, const QString& fileType,
+    MediaSource(int mediaId, const QString& mediaName, const QString& filePath,
+                const QString& fileType, const QString& mediaType,
                 double duration, const QString& qualityParam, const QString& aiEditParam,
-                const QDateTime& createTime, int windowId, int mediaSort);
+                const QString& thumbnailPath, int status,
+                const QDateTime& createTime, const QDateTime& updateTime,
+                int windowId, int mediaSort);
 
+    // ---------- getters ----------
     int mediaId() const { return m_mediaId; }
-    void setMediaId(int id) { m_mediaId = id; }
-
+    QString mediaName() const { return m_mediaName; }
     QString filePath() const { return m_filePath; }
-    void setFilePath(const QString& path) { m_filePath = path; }
-
     QString fileType() const { return m_fileType; }
-    void setFileType(const QString& type) { m_fileType = type; }
-
+    QString mediaType() const { return m_mediaType; }
     double duration() const { return m_duration; }
-    void setDuration(double sec) { m_duration = sec; }
-
     QString qualityParam() const { return m_qualityParam; }
-    void setQualityParam(const QString& param) { m_qualityParam = param; }
-
     QString aiEditParam() const { return m_aiEditParam; }
-    void setAiEditParam(const QString& param) { m_aiEditParam = param; }
-
+    QString thumbnailPath() const { return m_thumbnailPath; }
+    int status() const { return m_status; }
     QDateTime createTime() const { return m_createTime; }
-    void setCreateTime(const QDateTime& dt) { m_createTime = dt; }
-
+    QDateTime updateTime() const { return m_updateTime; }
     int windowId() const { return m_windowId; }
-    void setWindowId(int id) { m_windowId = id; }
-
     int mediaSort() const { return m_mediaSort; }
+
+    // ---------- setters ----------
+    void setMediaId(int id) { m_mediaId = id; }
+    void setMediaName(const QString& name) { m_mediaName = name; }
+    void setFilePath(const QString& path) { m_filePath = path; }
+    void setFileType(const QString& type) { m_fileType = type; }
+    void setMediaType(const QString& type) { m_mediaType = type; }
+    void setDuration(double sec) { m_duration = sec; }
+    void setQualityParam(const QString& param) { m_qualityParam = param; }
+    void setAiEditParam(const QString& param) { m_aiEditParam = param; }
+    void setThumbnailPath(const QString& path) { m_thumbnailPath = path; }
+    void setStatus(int status) { m_status = status; }
+    void setCreateTime(const QDateTime& dt) { m_createTime = dt; }
+    void setUpdateTime(const QDateTime& dt) { m_updateTime = dt; }
+    void setWindowId(int id) { m_windowId = id; }
     void setMediaSort(int sort) { m_mediaSort = sort; }
 
     static MediaSource fromSqlRecord(const QSqlRecord& record);
 
 private:
     int m_mediaId = 0;
-    QString m_filePath;
-    QString m_fileType;
-    double m_duration = 0.0;
-    QString m_qualityParam;   // JSON
-    QString m_aiEditParam;    // JSON
+    QString m_mediaName;            // 素材显示名称
+    QString m_filePath;             // 文件路径
+    QString m_fileType;             // 文件格式（扩展名）
+    QString m_mediaType;            // 素材类型（图片/视频/音频/流媒体等）
+    double m_duration = 0.0;        // 时长（秒）
+    QString m_qualityParam;         // 画质参数 JSON
+    QString m_aiEditParam;          // AI 编辑参数 JSON
+    QString m_thumbnailPath;        // 缩略图路径
+    int m_status = 1;               // 状态：0-禁用，1-正常
     QDateTime m_createTime;
-    int m_windowId = 0;
-    int m_mediaSort = 0;
+    QDateTime m_updateTime;         // 最后更新时间
+    int m_windowId = 0;             // 所属视窗 ID
+    int m_mediaSort = 0;            // 播放排序序号
 };
 
 } // namespace LEDDB

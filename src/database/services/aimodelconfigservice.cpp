@@ -14,16 +14,34 @@ AiModelConfigService::AiModelConfigService() = default;
 bool AiModelConfigService::addModelConfig(const AiModelConfig& config, const QString& operatorUser) {
     auto aiRepo = RepositoryFactory::createAiModelConfigRepository();
     bool success = aiRepo->insert(config);
-    AuditLogService().logOperation(operatorUser, "添加AI模型",
-                                   QString("添加模型 %1").arg(config.modelName()), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "添加AI模型", success ? "成功" : "失败",
+                                   QString("添加模型 %1").arg(config.modelName()),
+                                   "ai_model_config", config.configId());
     return success;
 }
 
 bool AiModelConfigService::updateModelConfig(const AiModelConfig& config, const QString& operatorUser) {
     auto aiRepo = RepositoryFactory::createAiModelConfigRepository();
     bool success = aiRepo->update(config);
-    AuditLogService().logOperation(operatorUser, "更新AI模型",
-                                   QString("更新模型 %1").arg(config.modelName()), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "更新AI模型", success ? "成功" : "失败",
+                                   QString("更新模型 %1").arg(config.modelName()),
+                                   "ai_model_config", config.configId());
     return success;
 }
 
@@ -31,9 +49,18 @@ bool AiModelConfigService::removeModelConfig(int modelId, const QString& operato
     auto aiRepo = RepositoryFactory::createAiModelConfigRepository();
     auto config = aiRepo->findById(modelId);
     if (!config) return false;
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
     bool success = aiRepo->deleteById(modelId);
-    AuditLogService().logOperation(operatorUser, "删除AI模型",
-                                   QString("删除模型 %1").arg(config->modelName()), success ? "成功" : "失败");
+    AuditLogService().logOperation(userId, "删除AI模型", success ? "成功" : "失败",
+                                   QString("删除模型 %1").arg(config->modelName()),
+                                   "ai_model_config", modelId);
     return success;
 }
 

@@ -870,10 +870,10 @@ bool PlaylistTreeModel::saveToDatabase(int projectId, const QString& operatorUse
 
             if (listId > 0) {
                 // 更新现有播放列表
-                m_businessController->updatePlaylist(listId, listName, 0, 1, operatorUser);
+                m_businessController->updatePlaylist(listId, listName, 0, operatorUser);
             } else {
                 // 创建新播放列表
-                m_businessController->createPlaylist(projectId, listName, 0, 1, operatorUser);
+                m_businessController->createPlaylist(projectId, listName, 0, operatorUser);
             }
         } else if (nodeType == "program") {
             QString programName = nodeData["name"].toString();

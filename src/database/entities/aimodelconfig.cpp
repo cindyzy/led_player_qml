@@ -7,23 +7,43 @@
 
 namespace LEDDB {
 
-AiModelConfig::AiModelConfig(int modelId, const QString& modelName, const QString& apiUrl,
+AiModelConfig::AiModelConfig(int configId, const QString& modelName, const QString& apiUrl,
                              const QString& apiKey, int timeout, const QString& offlineStrategy,
-                             int enableStatus)
-    : m_modelId(modelId), m_modelName(modelName), m_apiUrl(apiUrl), m_apiKey(apiKey),
-    m_timeout(timeout), m_offlineStrategy(offlineStrategy), m_enableStatus(enableStatus) {}
-
-AiModelConfig AiModelConfig::fromSqlRecord(const QSqlRecord& rec)
+                             const QString& modelPath, const QString& apiEndpoint,
+                             const QString& modelParams, int enableStatus,
+                             const QDateTime& createTime, const QDateTime& updateTime)
+    : m_configId(configId)
+    , m_modelName(modelName)
+    , m_apiUrl(apiUrl)
+    , m_apiKey(apiKey)
+    , m_timeout(timeout)
+    , m_offlineStrategy(offlineStrategy)
+    , m_modelPath(modelPath)
+    , m_apiEndpoint(apiEndpoint)
+    , m_modelParams(modelParams)
+    , m_enableStatus(enableStatus)
+    , m_createTime(createTime)
+    , m_updateTime(updateTime)
 {
-    AiModelConfig amc;
-    amc.setModelId(rec.value("model_id").toInt());
-    amc.setModelName(rec.value("model_name").toString());
-    amc.setApiUrl(rec.value("api_url").toString());
-    amc.setApiKey(rec.value("api_key").toString());
-    amc.setTimeout(rec.value("timeout").toInt());
-    amc.setOfflineStrategy(rec.value("offline_strategy").toString());
-    amc.setEnableStatus(rec.value("enable_status").toInt());
-    return amc;
+}
+
+
+AiModelConfig AiModelConfig::fromSqlRecord(const QSqlRecord& record)
+{
+    AiModelConfig config;
+    config.setConfigId(record.value("config_id").toInt());
+    config.setModelName(record.value("model_name").toString());
+    config.setApiUrl(record.value("api_url").toString());
+    config.setApiKey(record.value("api_key").toString());
+    config.setTimeout(record.value("timeout").toInt());
+    config.setOfflineStrategy(record.value("offline_strategy").toString());
+    config.setModelPath(record.value("model_path").toString());
+    config.setApiEndpoint(record.value("api_endpoint").toString());
+    config.setModelParams(record.value("model_params").toString());
+    config.setEnableStatus(record.value("enable_status").toInt());
+    config.setCreateTime(fromIsoString(record.value("create_time").toString()));
+    config.setUpdateTime(fromIsoString(record.value("update_time").toString()));
+    return config;
 }
 
 } // namespace LEDDB

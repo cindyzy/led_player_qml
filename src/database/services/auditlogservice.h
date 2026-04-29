@@ -11,10 +11,30 @@ class AuditLogService {
 public:
     AuditLogService();
 
-    void logOperation(const QString& operatorUser, const QString& operateType,
-                      const QString& operateContent, const QString& operateResult);
-    QList<LEDDB::AuditLog> getLogsByUser(const QString& operatorUser, int limit = 100);
-    QList<LEDDB::AuditLog> getLogsByType(const QString& operateType, int limit = 100);
+    // 完整版：记录操作日志
+    void logOperation(int userId,
+                      const QString& operationType,
+                      const QString& operateResult,
+                      const QString& operationDesc,
+                      const QString& targetTable,
+                      int targetId,
+                      const QString& clientIp = QString());
+
+    // // 简化版：仅记录基本操作（不关联具体表）
+    // void logSimple(int userId,
+    //                const QString& operationType,
+    //                const QString& operateResult,
+    //                const QString& operationDesc);
+
+    // // 简化版重载：使用用户名而非用户ID
+    // void logSimple(const QString& userName,
+    //                const QString& operationType,
+    //                const QString& operateResult,
+    //                const QString& operationDesc);
+
+    // 查询方法
+    QList<LEDDB::AuditLog> getLogsByUserId(int userId, int limit = 100);
+    QList<LEDDB::AuditLog> getLogsByOperationType(const QString& operationType, int limit = 100);
     QList<LEDDB::AuditLog> getLogsByTimeRange(const QDateTime& start, const QDateTime& end);
     QList<LEDDB::AuditLog> getAllLogs(int offset = 0, int limit = 100);
 };

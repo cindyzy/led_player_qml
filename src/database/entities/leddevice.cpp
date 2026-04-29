@@ -5,7 +5,7 @@
 
 namespace LEDDB {
 
-LedDevice::LedDevice(const QString& deviceId, const QString& deviceName, const QString& deviceType,
+LedDevice::LedDevice(int deviceId, const QString& deviceName, const QString& deviceType,
                      const QString& ipAddr, int port, int brightness, int onlineStatus,
                      const QString& configJson, const QDateTime& updateTime)
     : m_deviceId(deviceId), m_deviceName(deviceName), m_deviceType(deviceType),
@@ -15,7 +15,7 @@ LedDevice::LedDevice(const QString& deviceId, const QString& deviceName, const Q
 LedDevice LedDevice::fromSqlRecord(const QSqlRecord& rec)
 {
     LedDevice d;
-    d.setDeviceId(rec.value("device_id").toString());
+    d.setDeviceId(rec.value("device_id").toInt());
     d.setDeviceName(rec.value("device_name").toString());
     d.setDeviceType(rec.value("device_type").toString());
     d.setIpAddr(rec.value("ip_addr").toString());

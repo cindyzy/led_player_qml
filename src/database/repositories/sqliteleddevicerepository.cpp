@@ -45,14 +45,14 @@ bool SqliteLedDeviceRepository::update(const LEDDB::LedDevice& device) {
     return query.exec();
 }
 
-bool SqliteLedDeviceRepository::deleteById(const QString& deviceId) {
+bool SqliteLedDeviceRepository::deleteById(int deviceId) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare("DELETE FROM led_device WHERE device_id = ?");
     query.addBindValue(deviceId);
     return query.exec();
 }
 
-std::optional<LEDDB::LedDevice> SqliteLedDeviceRepository::findById(const QString& deviceId) {
+std::optional<LEDDB::LedDevice> SqliteLedDeviceRepository::findById(int deviceId) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare("SELECT * FROM led_device WHERE device_id = ?");
     query.addBindValue(deviceId);
@@ -91,7 +91,7 @@ QList<LEDDB::LedDevice> SqliteLedDeviceRepository::findAll(int offset, int limit
     return list;
 }
 
-bool SqliteLedDeviceRepository::updateBrightness(const QString& deviceId, int brightness) {
+bool SqliteLedDeviceRepository::updateBrightness(int deviceId, int brightness) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare("UPDATE led_device SET brightness=?, update_time=? WHERE device_id=?");
     query.addBindValue(brightness);
@@ -100,7 +100,7 @@ bool SqliteLedDeviceRepository::updateBrightness(const QString& deviceId, int br
     return query.exec();
 }
 
-bool SqliteLedDeviceRepository::updateOnlineStatus(const QString& deviceId, int status) {
+bool SqliteLedDeviceRepository::updateOnlineStatus(int deviceId, int status) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare("UPDATE led_device SET online_status=?, update_time=? WHERE device_id=?");
     query.addBindValue(status);

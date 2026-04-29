@@ -11,13 +11,13 @@ namespace LEDDB {
 class LedDevice {
 public:
     LedDevice() = default;
-    LedDevice(const QString& deviceId, const QString& deviceName, const QString& deviceType,
+    LedDevice(int deviceId, const QString& deviceName, const QString& deviceType,
               const QString& ipAddr, int port, int brightness, int onlineStatus,
               const QString& configJson, const QDateTime& updateTime);
 
     // Getters / Setters
-    QString deviceId() const { return m_deviceId; }
-    void setDeviceId(const QString& id) { m_deviceId = id; }
+    int deviceId() const { return m_deviceId; }
+    void setDeviceId(const int id) { m_deviceId = id; }
 
     QString deviceName() const { return m_deviceName; }
     void setDeviceName(const QString& name) { m_deviceName = name; }
@@ -46,7 +46,7 @@ public:
     static LedDevice fromSqlRecord(const QSqlRecord& record);
 
 private:
-    QString m_deviceId;
+    int m_deviceId;
     QString m_deviceName;
     QString m_deviceType;
     QString m_ipAddr;

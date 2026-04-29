@@ -17,16 +17,35 @@ bool PermissionService::assignPermission(int roleId, const QString& permCode, co
     perm.setPermCode(permCode);
     perm.setPermDesc(permDesc);
     bool success = permRepo->insert(perm);
-    AuditLogService().logOperation(operatorUser, "分配权限",
-                                   QString("给角色 %1 分配权限 %2").arg(roleId).arg(permCode), success ? "成功" : "失败");
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "分配权限",
+                                   success ? "成功" : "失败",
+                                   QString("给角色 %1 分配权限 %2").arg(roleId).arg(permCode),
+                                   "sys_permission", perm.permId());
     return success;
 }
 
 bool PermissionService::revokePermission(int permId, const QString& operatorUser) {
     auto permRepo = RepositoryFactory::createPermissionRepository();
     bool success = permRepo->deleteById(permId);
-    AuditLogService().logOperation(operatorUser, "撤销权限",
-                                   QString("撤销权限 ID=%1").arg(permId), success ? "成功" : "失败");
+
+    int userId = 0;
+    auto userRepo = RepositoryFactory::createUserRepository();
+    auto userOpt = userRepo->findByUserName(operatorUser);
+    if (userOpt.has_value()) {
+        userId = userOpt.value().userId();
+    }
+
+    AuditLogService().logOperation(userId, "撤销权限",
+                                   success ? "成功" : "失败",
+                                   QString("撤销权限 ID=%1").arg(permId),
+                                   "sys_permission", permId);
     return success;
 }
 

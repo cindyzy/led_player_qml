@@ -31,6 +31,19 @@ add_executable(LedPlayer
     src/core/models/tree/include/treeviewmodel.h
     src/core/models/PlaylistTreeModel.h
     src/core/models/PlaylistTreeModel.cpp
+    src/core/models/entity/UserModel.h src/core/models/entity/UserModel.cpp
+    src/core/models/entity/RoleModel.h src/core/models/entity/RoleModel.cpp
+    src/core/models/entity/PermissionModel.h src/core/models/entity/PermissionModel.cpp
+    src/core/models/entity/LedDeviceModel.h src/core/models/entity/LedDeviceModel.cpp
+    src/core/models/entity/ProjectConfigModel.h src/core/models/entity/ProjectConfigModel.cpp
+    src/core/models/entity/PlayListModel.h src/core/models/entity/PlayListModel.cpp
+    src/core/models/entity/ProgramInfoModel.h src/core/models/entity/ProgramInfoModel.cpp
+    src/core/models/entity/WindowViewModel.h src/core/models/entity/WindowViewModel.cpp
+    src/core/models/entity/MediaSourceModel.h src/core/models/entity/MediaSourceModel.cpp
+    src/core/models/entity/ScheduleParamModel.h src/core/models/entity/ScheduleParamModel.cpp
+    src/core/models/entity/AiModelConfigModel.h src/core/models/entity/AiModelConfigModel.cpp
+    src/core/models/entity/SceneStatisticModel.h src/core/models/entity/SceneStatisticModel.cpp
+    src/core/models/entity/AuditLogModel.h src/core/models/entity/AuditLogModel.cpp
     src/database/databasemanager.h src/database/databasemanager.cpp
     src/database/scopedtransaction.h src/database/scopedtransaction.cpp
 
