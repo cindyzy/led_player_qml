@@ -19,6 +19,9 @@ qt_add_qml_module(appDMX512Demo
     QML_FILES
         Main.qml
     SOURCES dmxcontroller.h dmxcontroller.cpp
+    SOURCES UdpManager.h UdpManager.cpp
+    QML_FILES main.qml
+    RESOURCES qml.qrc
 )
 
 # qt_add_resources(appDMX512Demo "qml"

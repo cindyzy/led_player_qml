@@ -16,11 +16,13 @@ public:
     void setBusinessController(BusinessController* controller);
     Q_INVOKABLE bool loadProjects();
     Q_INVOKABLE QVariant getProjectData(int index) const;
-    Q_INVOKABLE bool addProject(const QString& projectName, const QString& windowLayout,
-                                 const QString& lightMapping, const QString& cronStrategy, const QString& operatorUser = "system");
+    Q_INVOKABLE bool addProject(const QString& projectName, const QString& projectPath,
+                                 const QString& windowLayout, const QString& lightMapping,
+                                 const QString& cronStrategy, const QString& operatorUser = "system");
     Q_INVOKABLE bool updateProject(int projectId, const QString& projectName,
-                                   const QString& windowLayout, const QString& lightMapping,
-                                   const QString& cronStrategy, int isValid, const QString& operatorUser = "system");
+                                   const QString& projectPath, const QString& windowLayout,
+                                   const QString& lightMapping, const QString& cronStrategy,
+                                   int isValid, const QString& operatorUser = "system");
     Q_INVOKABLE bool deleteProject(int projectId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findProjectById(int projectId) const;
 
@@ -38,6 +40,7 @@ private:
     enum ProjectRoles {
         ProjectIdRole = Qt::UserRole + 1,
         ProjectNameRole,
+        ProjectPathRole,
         WindowLayoutRole,
         LightMappingRole,
         CronStrategyRole,

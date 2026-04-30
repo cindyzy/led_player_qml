@@ -31,6 +31,7 @@ QVariant ProjectConfigModel::getProjectData(int index) const
     QVariantMap map;
     map["projectId"] = proj.projectId();
     map["projectName"] = proj.projectName();
+    map["projectPath"] = proj.projectPath();
     map["windowLayout"] = proj.windowLayout();
     map["lightMapping"] = proj.lightMapping();
     map["cronStrategy"] = proj.cronStrategy();
@@ -39,8 +40,9 @@ QVariant ProjectConfigModel::getProjectData(int index) const
     return map;
 }
 
-bool ProjectConfigModel::addProject(const QString& projectName, const QString& windowLayout,
-                                     const QString& lightMapping, const QString& cronStrategy, const QString& operatorUser)
+bool ProjectConfigModel::addProject(const QString& projectName, const QString& projectPath,
+                                     const QString& windowLayout, const QString& lightMapping, 
+                                     const QString& cronStrategy, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ProjectConfigModel: BusinessController not set!";
@@ -48,6 +50,7 @@ bool ProjectConfigModel::addProject(const QString& projectName, const QString& w
     }
     LEDDB::ProjectConfig project;
     project.setProjectName(projectName);
+    project.setProjectPath(projectPath);
     project.setWindowLayout(windowLayout);
     project.setLightMapping(lightMapping);
     project.setCronStrategy(cronStrategy);
@@ -59,8 +62,9 @@ bool ProjectConfigModel::addProject(const QString& projectName, const QString& w
 }
 
 bool ProjectConfigModel::updateProject(int projectId, const QString& projectName,
-                                       const QString& windowLayout, const QString& lightMapping,
-                                       const QString& cronStrategy, int isValid, const QString& operatorUser)
+                                       const QString& projectPath, const QString& windowLayout, 
+                                       const QString& lightMapping, const QString& cronStrategy, 
+                                       int isValid, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ProjectConfigModel: BusinessController not set!";
@@ -72,6 +76,7 @@ bool ProjectConfigModel::updateProject(int projectId, const QString& projectName
     }
     LEDDB::ProjectConfig project = optProject.value();
     project.setProjectName(projectName);
+    project.setProjectPath(projectPath);
     project.setWindowLayout(windowLayout);
     project.setLightMapping(lightMapping);
     project.setCronStrategy(cronStrategy);
@@ -119,6 +124,7 @@ QVariant ProjectConfigModel::data(const QModelIndex& index, int role) const
     switch (role) {
     case ProjectIdRole: return proj.projectId();
     case ProjectNameRole: return proj.projectName();
+    case ProjectPathRole: return proj.projectPath();
     case WindowLayoutRole: return proj.windowLayout();
     case LightMappingRole: return proj.lightMapping();
     case CronStrategyRole: return proj.cronStrategy();
@@ -133,6 +139,7 @@ QHash<int, QByteArray> ProjectConfigModel::roleNames() const
     QHash<int, QByteArray> roles;
     roles[ProjectIdRole] = "projectId";
     roles[ProjectNameRole] = "projectName";
+    roles[ProjectPathRole] = "projectPath";
     roles[WindowLayoutRole] = "windowLayout";
     roles[LightMappingRole] = "lightMapping";
     roles[CronStrategyRole] = "cronStrategy";

@@ -10,15 +10,18 @@ namespace LEDDB {
 class ProjectConfig {
 public:
     ProjectConfig() = default;
-    ProjectConfig(int projectId, const QString& projectName, const QString& windowLayout,
-                  const QString& lightMapping, const QString& cronStrategy,
-                  const QDateTime& createTime, int isValid);
+    ProjectConfig(int projectId, const QString& projectName, const QString& projectPath,
+                  const QString& windowLayout, const QString& lightMapping, 
+                  const QString& cronStrategy, const QDateTime& createTime, int isValid);
 
     int projectId() const { return m_projectId; }
     void setProjectId(int id) { m_projectId = id; }
 
     QString projectName() const { return m_projectName; }
     void setProjectName(const QString& name) { m_projectName = name; }
+
+    QString projectPath() const { return m_projectPath; }
+    void setProjectPath(const QString& path) { m_projectPath = path; }
 
     QString windowLayout() const { return m_windowLayout; }
     void setWindowLayout(const QString& layout) { m_windowLayout = layout; }
@@ -40,8 +43,9 @@ public:
 private:
     int m_projectId = 0;
     QString m_projectName;
-    QString m_windowLayout;     // JSON
-    QString m_lightMapping;     // JSON
+    QString m_projectPath;       // 项目文件路径
+    QString m_windowLayout;      // JSON
+    QString m_lightMapping;      // JSON
     QString m_cronStrategy;
     QDateTime m_createTime;
     int m_isValid = 1;

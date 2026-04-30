@@ -10,14 +10,21 @@ import "components"
 
 ApplicationWindow {
     id: mainWindow
-    width: 1400
-    height: 900
+    width:  200
+    height:  100
     visible: true
     title: "LED Player 3"
-    minimumWidth: 1024
-    minimumHeight: 768
+    minimumWidth: 200
+    minimumHeight: 100
 
-    // ---------- 新增：页面栈 ----------
+    // 暗色主题
+    palette.window: "#1E1E1E"
+    palette.base: "#252526"
+    palette.alternateBase: "#2D2D2D"
+    palette.text: "#D4D4D4"
+    palette.windowText: "#D4D4D4"
+
+    // ---------- 页面栈 ----------
     StackView {
         id: stackView
         anchors.fill: parent
@@ -28,10 +35,14 @@ ApplicationWindow {
     Component {
         id: loginPageComponent
         LoginPage {
-            // 登录成功的回调（由 LoginPage 内部触发）
+            width: 200
+            height: 100
             onLoginSuccess: {
-                // 登录成功后，替换为主界面
                 stackView.replace(mainLayoutComponent)
+                mainWindow.width=1400
+                mainWindow.height=900
+                // mainLayout.width=1400
+                // mainLayout.height=800
             }
         }
     }
@@ -40,12 +51,13 @@ ApplicationWindow {
     Component {
         id: mainLayoutComponent
         MainLayout {
-            // 可选：从 BusinessController 获取当前登录用户信息
-            // 通过绑定 businessController.currentUserName 等
+            id: mainLayout
+            width: 1400
+            height: 870
         }
     }
 
-    // ---------- 对话框（保持不变）----------
+    // ---------- 对话框 ----------
     NewProjectDialog { id: newProjectDialog }
     HardwareSettingsDialog { id: hardwareSettingsDialog }
     NewWiringDialog { id: newWiringDialog }
@@ -60,7 +72,6 @@ ApplicationWindow {
     Connections {
         target: quickWiringDialog
         function onQuickWiringConfirmed(config) {
-            // 注意：此时主界面可能尚未加载，需确保 MainLayout 已存在
             if (stackView.currentItem && stackView.currentItem.applyQuickWiringPreview)
                 stackView.currentItem.applyQuickWiringPreview(config)
         }
@@ -74,7 +85,7 @@ ApplicationWindow {
         }
     }
 
-    // ---------- 快捷键（根据当前活动页面决定是否响应）----------
+    // ---------- 快捷键 ----------
     Shortcut {
         sequence: "Ctrl+O"
         onActivated: {
@@ -105,9 +116,9 @@ ApplicationWindow {
         }
     }
 
-    // 可选：监听登出事件，返回到登录页
+    // 登出事件监听
     Connections {
-        target: businessController   // 需确保已在 main.cpp 中注册
+        target: businessController
         function onLogout() {
             stackView.replace(loginPageComponent)
         }

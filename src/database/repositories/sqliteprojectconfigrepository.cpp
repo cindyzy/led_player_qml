@@ -11,11 +11,12 @@ using namespace Repository;
 bool SqliteProjectConfigRepository::insert(const LEDDB::ProjectConfig& project) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare(R"(
-        INSERT INTO project_config (project_name, window_layout, light_mapping,
+        INSERT INTO project_config (project_name, project_path, window_layout, light_mapping,
         cron_strategy, create_time, is_valid)
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     )");
     query.addBindValue(project.projectName());
+    query.addBindValue(project.projectPath());
     query.addBindValue(project.windowLayout());
     query.addBindValue(project.lightMapping());
     query.addBindValue(project.cronStrategy());
@@ -27,10 +28,11 @@ bool SqliteProjectConfigRepository::insert(const LEDDB::ProjectConfig& project) 
 bool SqliteProjectConfigRepository::update(const LEDDB::ProjectConfig& project) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare(R"(
-        UPDATE project_config SET project_name=?, window_layout=?, light_mapping=?,
+        UPDATE project_config SET project_name=?, project_path=?, window_layout=?, light_mapping=?,
         cron_strategy=?, is_valid=? WHERE project_id=?
     )");
     query.addBindValue(project.projectName());
+    query.addBindValue(project.projectPath());
     query.addBindValue(project.windowLayout());
     query.addBindValue(project.lightMapping());
     query.addBindValue(project.cronStrategy());

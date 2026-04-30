@@ -1,30 +1,19 @@
-// main.cpp
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include "dmxcontroller.h"
+#include "UdpManager.h"
 
 int main(int argc, char *argv[])
 {
-    // QGuiApplication app(argc, argv);
-    // app.setOrganizationName("DMX512Demo");
-    // app.setApplicationName("LEDController");
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication app(argc, argv);
 
-    // qmlRegisterType<DMXController>("DMX512LEDController", 1, 0, "DMXController");
+    qmlRegisterType<UdpManager>("ArtNet", 1, 0, "UdpManager");
 
     // QQmlApplicationEngine engine;
-    // engine.load(QUrl(QStringLiteral("qrc:/DMX512LEDController/Main.qml")));
-
+    // engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
     // if (engine.rootObjects().isEmpty())
     //     return -1;
-
-    // return app.exec();
-    QGuiApplication app(argc, argv);
-    app.setOrganizationName("DMX512Demo");
-    app.setApplicationName("LEDController");
-
-    qmlRegisterType<DMXController>("DMX512LEDController", 1, 0, "DMXController");
-
     QQmlApplicationEngine engine;
     QObject::connect(
         &engine,
@@ -33,6 +22,5 @@ int main(int argc, char *argv[])
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
     engine.loadFromModule("DMX512Demo", "Main");
-
-    return QCoreApplication::exec();
+    return app.exec();
 }

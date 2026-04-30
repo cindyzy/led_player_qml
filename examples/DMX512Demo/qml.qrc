@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/DMX512LEDController">
-        <file>Main.qml</file>
+    <qresource prefix="/">
+        <file>main.qml</file>
     </qresource>
 </RCC>

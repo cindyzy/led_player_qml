@@ -40,5 +40,10 @@
         <file>skins/Dark/Skin.qml</file>
         <file>skins/Blue/Skin.qml</file>
         <file>dialogs/LoginPage.qml</file>
+        <file>components/LogList.qml</file>
+        <file>views/PermissionManager.qml</file>
+        <file>views/ProjectManager.qml</file>
+        <file>views/AlgorithmScheduler.qml</file>
+        <file>views/AIMaterialEditor.qml</file>
     </qresource>
 </RCC>

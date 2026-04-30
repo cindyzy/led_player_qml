@@ -115,6 +115,7 @@ bool DatabaseManager::createTables()
         CREATE TABLE IF NOT EXISTS project_config (
             project_id INTEGER PRIMARY KEY AUTOINCREMENT,
             project_name TEXT NOT NULL,
+            project_path TEXT,
             window_layout TEXT,
             light_mapping TEXT,
             cron_strategy TEXT,

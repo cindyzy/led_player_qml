@@ -10,8 +10,8 @@ Page {
 
     ColumnLayout {
         anchors.centerIn: parent
-        TextField { id: username; placeholderText: "用户名" }
-        TextField { id: password; echoMode: TextField.Password; placeholderText: "密码" }
+        TextField { id: username; placeholderText: "admin"; text: "admin"}
+        TextField { id: password; echoMode: TextField.Password; placeholderText: "admin123"; text: "admin123" }
         Button {
             text: "登录"
             onClicked: {
