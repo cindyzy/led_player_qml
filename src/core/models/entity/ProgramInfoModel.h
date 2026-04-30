@@ -16,9 +16,9 @@ public:
     void setBusinessController(BusinessController* controller);
     Q_INVOKABLE bool loadPrograms(int listId = 0);
     Q_INVOKABLE QVariant getProgramData(int index) const;
-    Q_INVOKABLE bool addProgram(int listId, const QString& programName, double startTime, double endTime);
-    Q_INVOKABLE bool updateProgram(int programId, const QString& programName, double startTime, double endTime);
-    Q_INVOKABLE bool deleteProgram(int programId);
+    Q_INVOKABLE bool addProgram(int listId, const QString& programName, double startTime, double endTime, const QString& operatorUser = "system");
+    Q_INVOKABLE bool updateProgram(int programId, const QString& programName, double startTime, double endTime, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deleteProgram(int programId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findProgramById(int programId) const;
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;

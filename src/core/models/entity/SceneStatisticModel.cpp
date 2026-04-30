@@ -16,8 +16,14 @@ bool SceneStatisticModel::loadStatistics(int projectId)
         qDebug() << "SceneStatisticModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::SceneStatistic> statistics;
+    if (projectId > 0) {
+        statistics = m_businessController->getStatisticsByProject(projectId);
+    } else {
+        statistics = m_businessController->getAllStatistics();
+    }
     beginResetModel();
-    m_statistics.clear();
+    m_statistics = statistics;
     endResetModel();
     emit countChanged();
     return true;
@@ -44,34 +50,57 @@ QVariant SceneStatisticModel::getStatisticData(int index) const
 }
 
 bool SceneStatisticModel::addStatistic(int projectId, const QString& sceneType, int playCount,
-                                       double totalDuration, const QDateTime& statDate)
+                                       double totalDuration, const QDateTime& statDate, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "SceneStatisticModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "SceneStatisticModel: addStatistic called -" << sceneType;
-    return true;
+    LEDDB::SceneStatistic stat;
+    stat.setProjectId(projectId);
+    stat.setSceneType(sceneType);
+    stat.setPlayCount(playCount);
+    stat.setTotalDuration(totalDuration);
+    stat.setStatDate(statDate.date());
+    stat.setCollectTime(statDate);
+    bool success = m_businessController->recordSceneStatistic(stat, operatorUser);
+    if (success) {
+        loadStatistics(projectId);
+    }
+    return success;
 }
 
-bool SceneStatisticModel::updateStatistic(int statId, int playCount, double totalDuration)
+bool SceneStatisticModel::updateStatistic(int statId, int playCount, double totalDuration, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "SceneStatisticModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "SceneStatisticModel: updateStatistic called -" << statId;
-    return true;
+    auto optStat = m_businessController->getStatisticById(statId);
+    if (!optStat.has_value()) {
+        return false;
+    }
+    LEDDB::SceneStatistic stat = optStat.value();
+    stat.setPlayCount(playCount);
+    stat.setTotalDuration(totalDuration);
+    bool success = m_businessController->updateSceneStatistic(stat, operatorUser);
+    if (success) {
+        loadStatistics(0);
+    }
+    return success;
 }
 
-bool SceneStatisticModel::deleteStatistic(int statId)
+bool SceneStatisticModel::deleteStatistic(int statId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "SceneStatisticModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "SceneStatisticModel: deleteStatistic called -" << statId;
-    return true;
+    bool success = m_businessController->deleteSceneStatistic(statId,operatorUser);
+    if (success) {
+        loadStatistics(0);
+    }
+    return success;
 }
 
 QVariant SceneStatisticModel::findStatisticById(int statId) const

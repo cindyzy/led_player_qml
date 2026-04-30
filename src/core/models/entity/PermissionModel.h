@@ -16,9 +16,9 @@ public:
     void setBusinessController(BusinessController* controller);
     Q_INVOKABLE bool loadPermissions();
     Q_INVOKABLE QVariant getPermissionData(int index) const;
-    Q_INVOKABLE bool addPermission(int roleId, const QString& permCode, const QString& permDesc);
-    Q_INVOKABLE bool updatePermission(int permId, int roleId, const QString& permCode, const QString& permDesc);
-    Q_INVOKABLE bool deletePermission(int permId);
+    Q_INVOKABLE bool addPermission(int roleId, const QString& permCode, const QString& permDesc, const QString& operatorUser = "system");
+    Q_INVOKABLE bool updatePermission(int permId, int roleId, const QString& permCode, const QString& permDesc, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deletePermission(int permId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findPermissionById(int permId) const;
     Q_INVOKABLE QList<QVariant> getPermissionsByRole(int roleId) const;
 

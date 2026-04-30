@@ -1,5 +1,6 @@
 #include "MediaSourceModel.h"
 #include <QDebug>
+#include <QFileInfo>
 
 MediaSourceModel::MediaSourceModel(QObject* parent) : QAbstractListModel(parent)
 {
@@ -16,8 +17,12 @@ bool MediaSourceModel::loadMedias(int windowId)
         qDebug() << "MediaSourceModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::MediaSource> medias;
+    if (windowId > 0) {
+        medias = m_businessController->getMediaByWindow(windowId);
+    }
     beginResetModel();
-    m_medias.clear();
+    m_medias = medias;
     endResetModel();
     emit countChanged();
     return true;
@@ -42,34 +47,53 @@ QVariant MediaSourceModel::getMediaData(int index) const
 }
 
 bool MediaSourceModel::addMedia(int windowId, const QString& filePath, const QString& mediaName,
-                                 double duration, int mediaType, const QString& thumbnailPath)
+                                 double duration, const QString& mediaType, const QString& thumbnailPath, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "MediaSourceModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "MediaSourceModel: addMedia called -" << mediaName;
-    return true;
+    // 解析文件扩展名作为 fileType
+    QFileInfo fileInfo(filePath);
+    QString fileType = fileInfo.suffix().toLower();
+    
+    bool success = m_businessController->addMedia(windowId, filePath, fileType, duration, 0, operatorUser);
+    if (success) {
+        loadMedias(windowId);
+    }
+    return success;
 }
 
-bool MediaSourceModel::updateMedia(int mediaId, const QString& mediaName, double duration, int status)
+bool MediaSourceModel::updateMedia(int mediaId, const QString& mediaName, double duration, int status, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "MediaSourceModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "MediaSourceModel: updateMedia called -" << mediaId;
-    return true;
+    auto optMedia = m_businessController->getMediaById(mediaId);
+    if (!optMedia.has_value()) {
+        return false;
+    }
+    LEDDB::MediaSource media = optMedia.value();
+    
+    bool success = m_businessController->updateMedia(mediaId, media.filePath(), media.fileType(), duration, media.mediaSort(), mediaName, status, operatorUser);
+    if (success) {
+        loadMedias(0);
+    }
+    return success;
 }
 
-bool MediaSourceModel::deleteMedia(int mediaId)
+bool MediaSourceModel::deleteMedia(int mediaId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "MediaSourceModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "MediaSourceModel: deleteMedia called -" << mediaId;
-    return true;
+    bool success = m_businessController->deleteMedia(mediaId, operatorUser);
+    if (success) {
+        loadMedias(0);
+    }
+    return success;
 }
 
 QVariant MediaSourceModel::findMediaById(int mediaId) const

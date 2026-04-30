@@ -16,8 +16,9 @@ bool ProjectConfigModel::loadProjects()
         qDebug() << "ProjectConfigModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::ProjectConfig> projects = m_businessController->getAllProjects();
     beginResetModel();
-    m_projects.clear();
+    m_projects = projects;
     endResetModel();
     emit countChanged();
     return true;
@@ -39,36 +40,60 @@ QVariant ProjectConfigModel::getProjectData(int index) const
 }
 
 bool ProjectConfigModel::addProject(const QString& projectName, const QString& windowLayout,
-                                     const QString& lightMapping, const QString& cronStrategy)
+                                     const QString& lightMapping, const QString& cronStrategy, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ProjectConfigModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ProjectConfigModel: addProject called -" << projectName;
-    return true;
+    LEDDB::ProjectConfig project;
+    project.setProjectName(projectName);
+    project.setWindowLayout(windowLayout);
+    project.setLightMapping(lightMapping);
+    project.setCronStrategy(cronStrategy);
+    bool success = m_businessController->createProject(project, operatorUser);
+    if (success) {
+        loadProjects();
+    }
+    return success;
 }
 
 bool ProjectConfigModel::updateProject(int projectId, const QString& projectName,
                                        const QString& windowLayout, const QString& lightMapping,
-                                       const QString& cronStrategy, int isValid)
+                                       const QString& cronStrategy, int isValid, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ProjectConfigModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ProjectConfigModel: updateProject called -" << projectId;
-    return true;
+    auto optProject = m_businessController->getProjectById(projectId);
+    if (!optProject.has_value()) {
+        return false;
+    }
+    LEDDB::ProjectConfig project = optProject.value();
+    project.setProjectName(projectName);
+    project.setWindowLayout(windowLayout);
+    project.setLightMapping(lightMapping);
+    project.setCronStrategy(cronStrategy);
+    project.setIsValid(isValid);
+    bool success = m_businessController->updateProject(project, operatorUser);
+    if (success) {
+        loadProjects();
+    }
+    return success;
 }
 
-bool ProjectConfigModel::deleteProject(int projectId)
+bool ProjectConfigModel::deleteProject(int projectId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ProjectConfigModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ProjectConfigModel: deleteProject called -" << projectId;
-    return true;
+    bool success = m_businessController->deleteProject(projectId, operatorUser);
+    if (success) {
+        loadProjects();
+    }
+    return success;
 }
 
 QVariant ProjectConfigModel::findProjectById(int projectId) const

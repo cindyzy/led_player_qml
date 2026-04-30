@@ -17,6 +17,7 @@ bool PermissionModel::loadPermissions()
         return false;
     }
 
+    // 权限通常按角色加载，但这里先清空（实际使用时可以通过角色ID加载）
     beginResetModel();
     m_permissions.clear();
     endResetModel();
@@ -39,34 +40,47 @@ QVariant PermissionModel::getPermissionData(int index) const
     return map;
 }
 
-bool PermissionModel::addPermission(int roleId, const QString& permCode, const QString& permDesc)
+bool PermissionModel::addPermission(int roleId, const QString& permCode, const QString& permDesc, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "PermissionModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "PermissionModel: addPermission called -" << permCode;
-    return true;
+    bool success = m_businessController->assignPermission(roleId, permCode, permDesc, operatorUser);
+    if (success) {
+        loadPermissions();
+    }
+    return success;
 }
 
-bool PermissionModel::updatePermission(int permId, int roleId, const QString& permCode, const QString& permDesc)
+bool PermissionModel::updatePermission(int permId, int roleId, const QString& permCode, const QString& permDesc, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "PermissionModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "PermissionModel: updatePermission called -" << permId;
-    return true;
+    // BusinessController 没有直接的 updatePermission 方法，可以先删除再添加
+    bool success = m_businessController->revokePermission(permId, operatorUser);
+    if (success) {
+        success = m_businessController->assignPermission(roleId, permCode, permDesc, operatorUser);
+        if (success) {
+            loadPermissions();
+        }
+    }
+    return success;
 }
 
-bool PermissionModel::deletePermission(int permId)
+bool PermissionModel::deletePermission(int permId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "PermissionModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "PermissionModel: deletePermission called -" << permId;
-    return true;
+    bool success = m_businessController->revokePermission(permId, operatorUser);
+    if (success) {
+        loadPermissions();
+    }
+    return success;
 }
 
 QVariant PermissionModel::findPermissionById(int permId) const

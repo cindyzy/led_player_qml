@@ -16,9 +16,9 @@ public:
     void setBusinessController(BusinessController* controller);
     Q_INVOKABLE bool loadRoles();
     Q_INVOKABLE QVariant getRoleData(int index) const;
-    Q_INVOKABLE bool addRole(const QString& roleName, const QString& roleDesc);
-    Q_INVOKABLE bool updateRole(int roleId, const QString& roleName, const QString& roleDesc);
-    Q_INVOKABLE bool deleteRole(int roleId);
+    Q_INVOKABLE bool addRole(const QString& roleName, const QString& roleDesc, const QString& operatorUser = "system");
+    Q_INVOKABLE bool updateRole(int roleId, const QString& roleName, const QString& roleDesc, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deleteRole(int roleId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findRoleById(int roleId) const;
     Q_INVOKABLE QVariant findRoleByName(const QString& roleName) const;
 

@@ -105,6 +105,12 @@ std::optional<Role> RoleService::getRoleById(int roleId) const
     return roleRepo->findById(roleId);
 }
 
+std::optional<Role> RoleService::getRoleByName(const QString& roleName) const
+{
+    auto roleRepo = RepositoryFactory::createRoleRepository();
+    return roleRepo->findByName(roleName);
+}
+
 QList<Role> RoleService::getAllRoles() const
 {
     auto roleRepo = RepositoryFactory::createRoleRepository();

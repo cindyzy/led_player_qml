@@ -17,13 +17,13 @@ public:
     Q_INVOKABLE bool loadDevices();
     Q_INVOKABLE QVariant getDeviceData(int index) const;
     Q_INVOKABLE bool addDevice(const QString& deviceName, const QString& deviceType,
-                               const QString& ipAddr, int port, int brightness);
+                               const QString& ipAddr, int port, int brightness, const QString& operatorUser = "system");
     Q_INVOKABLE bool updateDevice(int deviceId, const QString& deviceName,
                                    const QString& deviceType, const QString& ipAddr,
-                                   int port, int brightness, int onlineStatus);
-    Q_INVOKABLE bool deleteDevice(int deviceId);
+                                   int port, int brightness, int onlineStatus, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deleteDevice(int deviceId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findDeviceById(int deviceId) const;
-    Q_INVOKABLE bool updateBrightness(int deviceId, int brightness);
+    Q_INVOKABLE bool updateBrightness(int deviceId, int brightness, const QString& operatorUser = "system");
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;

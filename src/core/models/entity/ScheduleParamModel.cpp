@@ -16,8 +16,9 @@ bool ScheduleParamModel::loadParams()
         qDebug() << "ScheduleParamModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::ScheduleParam> params = m_businessController->getAllScheduleParams();
     beginResetModel();
-    m_params.clear();
+    m_params = params;
     endResetModel();
     emit countChanged();
     return true;
@@ -42,36 +43,67 @@ QVariant ScheduleParamModel::getParamData(int index) const
 
 bool ScheduleParamModel::addParam(const QString& sceneType, double sceneThreshold, int predictCycle,
                                    double envWeight, double sceneWeight, int brightnessMin, int brightnessMax,
-                                   const QString& strategyJson)
+                                   const QString& strategyJson, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ScheduleParamModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ScheduleParamModel: addParam called -" << sceneType;
-    return true;
+    LEDDB::ScheduleParam param;
+    param.setSceneType(sceneType);
+    param.setSceneThreshold(sceneThreshold);
+    param.setPredictCycle(predictCycle);
+    param.setEnvWeight(envWeight);
+    param.setSceneWeight(sceneWeight);
+    param.setBrightnessMin(brightnessMin);
+    param.setBrightnessMax(brightnessMax);
+    param.setStrategyJson(strategyJson);
+    bool success = m_businessController->saveScheduleParam(param, operatorUser);
+    if (success) {
+        loadParams();
+    }
+    return success;
 }
 
 bool ScheduleParamModel::updateParam(int scheduleId, const QString& sceneType, double sceneThreshold,
                                       int predictCycle, double envWeight, double sceneWeight,
-                                      int brightnessMin, int brightnessMax, const QString& strategyJson)
+                                      int brightnessMin, int brightnessMax, const QString& strategyJson, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ScheduleParamModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ScheduleParamModel: updateParam called -" << scheduleId;
-    return true;
+    auto optParam = m_businessController->getScheduleParamById(scheduleId);
+    if (!optParam.has_value()) {
+        return false;
+    }
+    LEDDB::ScheduleParam param = optParam.value();
+    param.setSceneType(sceneType);
+    param.setSceneThreshold(sceneThreshold);
+    param.setPredictCycle(predictCycle);
+    param.setEnvWeight(envWeight);
+    param.setSceneWeight(sceneWeight);
+    param.setBrightnessMin(brightnessMin);
+    param.setBrightnessMax(brightnessMax);
+    param.setStrategyJson(strategyJson);
+    bool success = m_businessController->saveScheduleParam(param, operatorUser);
+    if (success) {
+        loadParams();
+    }
+    return success;
 }
 
-bool ScheduleParamModel::deleteParam(int scheduleId)
+bool ScheduleParamModel::deleteParam(int scheduleId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ScheduleParamModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ScheduleParamModel: deleteParam called -" << scheduleId;
-    return true;
+    bool success = m_businessController->deleteScheduleParam(scheduleId, operatorUser);
+    if (success) {
+        loadParams();
+    }
+    return success;
 }
 
 QVariant ScheduleParamModel::findParamById(int scheduleId) const

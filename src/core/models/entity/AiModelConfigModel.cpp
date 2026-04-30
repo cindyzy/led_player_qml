@@ -16,8 +16,9 @@ bool AiModelConfigModel::loadConfigs()
         qDebug() << "AiModelConfigModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::AiModelConfig> configs = m_businessController->getAllAiModels();
     beginResetModel();
-    m_configs.clear();
+    m_configs = configs;
     endResetModel();
     emit countChanged();
     return true;
@@ -43,36 +44,64 @@ QVariant AiModelConfigModel::getConfigData(int index) const
 
 bool AiModelConfigModel::addConfig(const QString& modelName, const QString& modelPath,
                                     const QString& apiEndpoint, const QString& apiKey,
-                                    int timeout, const QString& modelParams)
+                                    int timeout, const QString& modelParams, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "AiModelConfigModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "AiModelConfigModel: addConfig called -" << modelName;
-    return true;
+    LEDDB::AiModelConfig config;
+    config.setModelName(modelName);
+    config.setModelPath(modelPath);
+    config.setApiEndpoint(apiEndpoint);
+    config.setApiKey(apiKey);
+    config.setTimeout(timeout);
+    config.setModelParams(modelParams);
+    bool success = m_businessController->addAiModelConfig(config, operatorUser);
+    if (success) {
+        loadConfigs();
+    }
+    return success;
 }
 
 bool AiModelConfigModel::updateConfig(int configId, const QString& modelName, const QString& modelPath,
                                        const QString& apiEndpoint, const QString& apiKey,
-                                       int timeout, const QString& modelParams, int status)
+                                       int timeout, const QString& modelParams, int status, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "AiModelConfigModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "AiModelConfigModel: updateConfig called -" << configId;
-    return true;
+    auto optConfig = m_businessController->getAiModelConfigById(configId);
+    if (!optConfig.has_value()) {
+        return false;
+    }
+    LEDDB::AiModelConfig config = optConfig.value();
+    config.setModelName(modelName);
+    config.setModelPath(modelPath);
+    config.setApiEndpoint(apiEndpoint);
+    config.setApiKey(apiKey);
+    config.setTimeout(timeout);
+    config.setModelParams(modelParams);
+    config.setEnableStatus(status);
+    bool success = m_businessController->updateAiModelConfig(config, operatorUser);
+    if (success) {
+        loadConfigs();
+    }
+    return success;
 }
 
-bool AiModelConfigModel::deleteConfig(int configId)
+bool AiModelConfigModel::deleteConfig(int configId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "AiModelConfigModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "AiModelConfigModel: deleteConfig called -" << configId;
-    return true;
+    bool success = m_businessController->deleteAiModelConfig(configId, operatorUser);
+    if (success) {
+        loadConfigs();
+    }
+    return success;
 }
 
 QVariant AiModelConfigModel::findConfigById(int configId) const

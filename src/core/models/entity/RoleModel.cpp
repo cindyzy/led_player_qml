@@ -17,8 +17,9 @@ bool RoleModel::loadRoles()
         return false;
     }
 
+    QList<LEDDB::Role> roles = m_businessController->getAllRoles();
     beginResetModel();
-    m_roles.clear();
+    m_roles = roles;
     endResetModel();
     emit countChanged();
     return true;
@@ -38,34 +39,43 @@ QVariant RoleModel::getRoleData(int index) const
     return map;
 }
 
-bool RoleModel::addRole(const QString& roleName, const QString& roleDesc)
+bool RoleModel::addRole(const QString& roleName, const QString& roleDesc, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "RoleModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "RoleModel: addRole called -" << roleName;
-    return true;
+    bool success = m_businessController->createRole(roleName, roleDesc, operatorUser);
+    if (success) {
+        loadRoles();
+    }
+    return success;
 }
 
-bool RoleModel::updateRole(int roleId, const QString& roleName, const QString& roleDesc)
+bool RoleModel::updateRole(int roleId, const QString& roleName, const QString& roleDesc, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "RoleModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "RoleModel: updateRole called -" << roleId;
-    return true;
+    bool success = m_businessController->updateRole(roleId, roleName, roleDesc, operatorUser);
+    if (success) {
+        loadRoles();
+    }
+    return success;
 }
 
-bool RoleModel::deleteRole(int roleId)
+bool RoleModel::deleteRole(int roleId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "RoleModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "RoleModel: deleteRole called -" << roleId;
-    return true;
+    bool success = m_businessController->deleteRole(roleId, operatorUser);
+    if (success) {
+        loadRoles();
+    }
+    return success;
 }
 
 QVariant RoleModel::findRoleById(int roleId) const

@@ -16,8 +16,9 @@ bool LedDeviceModel::loadDevices()
         qDebug() << "LedDeviceModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::LedDevice> devices = m_businessController->getAllDevices();
     beginResetModel();
-    m_devices.clear();
+    m_devices = devices;
     endResetModel();
     emit countChanged();
     return true;
@@ -41,36 +42,62 @@ QVariant LedDeviceModel::getDeviceData(int index) const
 }
 
 bool LedDeviceModel::addDevice(const QString& deviceName, const QString& deviceType,
-                               const QString& ipAddr, int port, int brightness)
+                               const QString& ipAddr, int port, int brightness, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "LedDeviceModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "LedDeviceModel: addDevice called -" << deviceName;
-    return true;
+    LEDDB::LedDevice device;
+    device.setDeviceName(deviceName);
+    device.setDeviceType(deviceType);
+    device.setIpAddr(ipAddr);
+    device.setPort(port);
+    device.setBrightness(brightness);
+    bool success = m_businessController->addDevice(device, operatorUser);
+    if (success) {
+        loadDevices();
+    }
+    return success;
 }
 
 bool LedDeviceModel::updateDevice(int deviceId, const QString& deviceName,
                                    const QString& deviceType, const QString& ipAddr,
-                                   int port, int brightness, int onlineStatus)
+                                   int port, int brightness, int onlineStatus, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "LedDeviceModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "LedDeviceModel: updateDevice called -" << deviceId;
-    return true;
+    auto optDevice = m_businessController->getDeviceById(deviceId);
+    if (!optDevice.has_value()) {
+        return false;
+    }
+    LEDDB::LedDevice device = optDevice.value();
+    device.setDeviceName(deviceName);
+    device.setDeviceType(deviceType);
+    device.setIpAddr(ipAddr);
+    device.setPort(port);
+    device.setBrightness(brightness);
+    device.setOnlineStatus(onlineStatus);
+    bool success = m_businessController->updateDevice(device, operatorUser);
+    if (success) {
+        loadDevices();
+    }
+    return success;
 }
 
-bool LedDeviceModel::deleteDevice(int deviceId)
+bool LedDeviceModel::deleteDevice(int deviceId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "LedDeviceModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "LedDeviceModel: deleteDevice called -" << deviceId;
-    return true;
+    bool success = m_businessController->removeDevice(deviceId, operatorUser);
+    if (success) {
+        loadDevices();
+    }
+    return success;
 }
 
 QVariant LedDeviceModel::findDeviceById(int deviceId) const
@@ -83,14 +110,17 @@ QVariant LedDeviceModel::findDeviceById(int deviceId) const
     return QVariant();
 }
 
-bool LedDeviceModel::updateBrightness(int deviceId, int brightness)
+bool LedDeviceModel::updateBrightness(int deviceId, int brightness, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "LedDeviceModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "LedDeviceModel: updateBrightness called -" << deviceId;
-    return true;
+    bool success = m_businessController->setDeviceBrightness(deviceId, brightness, operatorUser);
+    if (success) {
+        loadDevices();
+    }
+    return success;
 }
 
 int LedDeviceModel::rowCount(const QModelIndex& parent) const

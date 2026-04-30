@@ -17,6 +17,7 @@ public:
     virtual bool update(const LEDDB::Role& role) = 0;
     virtual bool deleteById(int roleId) = 0;
     virtual std::optional<LEDDB::Role> findById(int roleId) = 0;
+    virtual std::optional<LEDDB::Role> findByName(const QString& roleName) = 0;
     virtual QList<LEDDB::Role> findAll() = 0;
 };
 

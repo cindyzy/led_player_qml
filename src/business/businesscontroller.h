@@ -35,7 +35,7 @@ public:
     Q_INVOKABLE std::optional<LEDDB::User> getUserById(int userId);
     Q_INVOKABLE std::optional<LEDDB::User> getUserByName(const QString &userName);
     Q_INVOKABLE QList<LEDDB::User> getAllUsers(int offset = 0, int limit = 100);
-    Q_INVOKABLE bool authenticate(const QString &userName, const QString &password);
+    // Q_INVOKABLE bool authenticate(const QString &userName, const QString &password);
     Q_INVOKABLE bool changePassword(int userId, const QString &oldPwd, const QString &newPwd, const QString &operatorUser);
 
     // ========================= 2. 角色管理 =========================
@@ -43,6 +43,7 @@ public:
     Q_INVOKABLE bool updateRole(int roleId, const QString &roleName, const QString &roleDesc, const QString &operatorUser);
     Q_INVOKABLE bool deleteRole(int roleId, const QString &operatorUser);
     Q_INVOKABLE std::optional<LEDDB::Role> getRoleById(int roleId);
+    Q_INVOKABLE std::optional<LEDDB::Role> getRoleByName(const QString &roleName);
     Q_INVOKABLE QList<LEDDB::Role> getAllRoles();
 
     // ========================= 3. 权限管理 =========================
@@ -71,8 +72,9 @@ public:
     Q_INVOKABLE QList<LEDDB::ProjectConfig> getAllProjects();
 
     // ========================= 6. 播放列表管理 =========================
-    Q_INVOKABLE bool createPlaylist(int projectId, const QString &listName, int loopType, const QString &operatorUser);
-    Q_INVOKABLE bool updatePlaylist(int listId, const QString &listName, int loopType, const QString &operatorUser);
+    Q_INVOKABLE bool createPlaylist(int projectId, const QString &listName, int playSort, int loopType, const QString &operatorUser);
+    Q_INVOKABLE bool updatePlaylist(int listId, const QString &listName,int playSort, int loopType,double duration,long long frames,int count, const QString &operatorUser);
+
     Q_INVOKABLE bool deletePlaylist(int listId, const QString &operatorUser);
     Q_INVOKABLE std::optional<LEDDB::PlayList> getPlaylistById(int listId);
     Q_INVOKABLE QList<LEDDB::PlayList> getPlaylistsByProject(int projectId);
@@ -88,8 +90,10 @@ public:
     Q_INVOKABLE bool reorderPrograms(int listId, const QList<int> &programIdsInOrder, const QString &operatorUser);
 
     // ========================= 8. 视窗管理 =========================
-    Q_INVOKABLE bool createWindow(int programId, const QString &windowName, int x, int y, int width, int height, int zIndex, const QString &operatorUser);
-    Q_INVOKABLE bool updateWindow(int windowId, const QString &windowName, int x, int y, int width, int height, int zIndex, const QString &operatorUser);
+    Q_INVOKABLE bool createWindow(int programId, const QString &windowName, int x, int y, int width, int height,
+                                 int blendType, const QString &windowColor, int lockPosition, const QString &operatorUser);
+    Q_INVOKABLE bool updateWindow(int windowId, const QString &windowName, int x, int y, int width, int height,
+                                 int blendType, const QString &windowColor, int lockPosition, const QString &operatorUser);
     Q_INVOKABLE bool deleteWindow(int windowId, const QString &operatorUser);
     Q_INVOKABLE std::optional<LEDDB::WindowView> getWindowById(int windowId);
     Q_INVOKABLE QList<LEDDB::WindowView> getWindowsByProgram(int programId);
@@ -97,7 +101,7 @@ public:
 
     // ========================= 9. 素材管理 =========================
     Q_INVOKABLE bool addMedia(int windowId, const QString &filePath, const QString &fileType, double duration, int mediaSort, const QString &operatorUser);
-    Q_INVOKABLE bool updateMedia(int mediaId, const QString &filePath, const QString &fileType, double duration, int mediaSort, const QString &operatorUser);
+    Q_INVOKABLE bool updateMedia(int mediaId, const QString &filePath, const QString &fileType, double duration, int mediaSort, const QString &mediaName, int status, const QString &operatorUser);
     Q_INVOKABLE bool deleteMedia(int mediaId, const QString &operatorUser);
     Q_INVOKABLE std::optional<LEDDB::MediaSource> getMediaById(int mediaId);
     Q_INVOKABLE QList<LEDDB::MediaSource> getMediaByWindow(int windowId);
@@ -119,7 +123,11 @@ public:
     Q_INVOKABLE QList<LEDDB::AiModelConfig> getAllAiModels();
 
     // ========================= 12. 场景统计 =========================
-    Q_INVOKABLE bool recordSceneData(const LEDDB::SceneStatistic &stat);
+    Q_INVOKABLE bool recordSceneStatistic(const LEDDB::SceneStatistic &stat, const QString &operatorUser);
+    Q_INVOKABLE bool updateSceneStatistic(const LEDDB::SceneStatistic &stat, const QString &operatorUser);
+    Q_INVOKABLE bool deleteSceneStatistic(int statId, const QString &operatorUser);
+    Q_INVOKABLE std::optional<LEDDB::SceneStatistic> getStatisticById(int statId);
+    Q_INVOKABLE QList<LEDDB::SceneStatistic> getAllStatistics();
     Q_INVOKABLE QList<LEDDB::SceneStatistic> getStatisticsByProject(int projectId);
     Q_INVOKABLE QList<LEDDB::SceneStatistic> getStatisticsByTimeRange(const QDateTime &start, const QDateTime &end);
     Q_INVOKABLE QList<LEDDB::SceneStatistic> getLatestStatistics(int limit = 100);
@@ -136,6 +144,15 @@ public:
 
     // ========================= 辅助方法 =========================
     Q_INVOKABLE QString getCurrentOperator();   // 获取当前登录用户（示例：从登录会话获取）
+    // business/BusinessController.h（新增）
+// public:
+    Q_INVOKABLE bool login(const QString& username, const QString& password);
+    Q_INVOKABLE void logout();
+    Q_INVOKABLE bool isLoggedIn() const;
+    Q_INVOKABLE int currentUserId() const;
+    Q_INVOKABLE QString currentUserName() const;
+    Q_INVOKABLE int currentRoleId() const;
+    Q_INVOKABLE bool hasPermission(const QString& permCode);
 
 private:
     // 内部辅助函数：记录审计日志

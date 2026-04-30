@@ -7,6 +7,7 @@ import "views"
 import "dialogs"
 import "utils"
 import "components"
+
 ApplicationWindow {
     id: mainWindow
     width: 1400
@@ -15,81 +16,100 @@ ApplicationWindow {
     title: "LED Player 3"
     minimumWidth: 1024
     minimumHeight: 768
-    // menuBar: MenuBarArea{
-    // }
 
-
-    // 应用图标
-    // icon.source: "qrc:/icons/app-icon.png"
-
-    // 应用数据
-    // property alias projectModel: projectData
-    // property alias playlistModel: playlistData
-
-    // ProjectModel { id: projectData }
-    // PlaylistModel { id: playlistData }
-    // SkinManager
-    // {
-    //     id:skinManager
-    // }
-
-    // 主界面
-    MainLayout {
-        id: mainLayout
+    // ---------- 新增：页面栈 ----------
+    StackView {
+        id: stackView
         anchors.fill: parent
+        initialItem: loginPageComponent
     }
-    // 新建项目对话框
-    NewProjectDialog {
-        id: newProjectDialog
+
+    // ---------- 登录页面组件 ----------
+    Component {
+        id: loginPageComponent
+        LoginPage {
+            // 登录成功的回调（由 LoginPage 内部触发）
+            onLoginSuccess: {
+                // 登录成功后，替换为主界面
+                stackView.replace(mainLayoutComponent)
+            }
+        }
     }
-    HardwareSettingsDialog{
-        id:hardwareSettingsDialog
+
+    // ---------- 主界面组件 ----------
+    Component {
+        id: mainLayoutComponent
+        MainLayout {
+            // 可选：从 BusinessController 获取当前登录用户信息
+            // 通过绑定 businessController.currentUserName 等
+        }
     }
-    NewWiringDialog{
-        id:newWiringDialog
-    }
-    QuickWiringDialog{
-    id:quickWiringDialog
-    }
-    AnimationEditorDialog
-    {
-        id:animationEditorDialog
+
+    // ---------- 对话框（保持不变）----------
+    NewProjectDialog { id: newProjectDialog }
+    HardwareSettingsDialog { id: hardwareSettingsDialog }
+    NewWiringDialog { id: newWiringDialog }
+    QuickWiringDialog { id: quickWiringDialog }
+    AnimationEditorDialog {
+        id: animationEditorDialog
         visible: false
     }
     MessageDialog { id: messageDialog }
-    // CharBitmapGenerator
-    // {
-    //     id:charBitmapGenerator
 
-    // }
-    // property var charGenerator: charBitmapGenerator
+    // ---------- 信号连接 ----------
     Connections {
         target: quickWiringDialog
         function onQuickWiringConfirmed(config) {
-            mainLayout.applyQuickWiringPreview(config)
+            // 注意：此时主界面可能尚未加载，需确保 MainLayout 已存在
+            if (stackView.currentItem && stackView.currentItem.applyQuickWiringPreview)
+                stackView.currentItem.applyQuickWiringPreview(config)
         }
     }
-    
-    // 连接动画编辑器的素材准备信号
+
     Connections {
         target: animationEditorDialog
         function onMaterialReady(materialData) {
-            mainLayout.handleMaterialReady(materialData)
+            if (stackView.currentItem && stackView.currentItem.handleMaterialReady)
+                stackView.currentItem.handleMaterialReady(materialData)
         }
     }
-    // 快捷键
+
+    // ---------- 快捷键（根据当前活动页面决定是否响应）----------
     Shortcut {
         sequence: "Ctrl+O"
-        onActivated: console.log("打开项目")
+        onActivated: {
+            if (stackView.currentItem && stackView.currentItem.openProject)
+                stackView.currentItem.openProject()
+            else
+                console.log("打开项目")
+        }
     }
 
     Shortcut {
         sequence: "Ctrl+S"
-        onActivated: console.log("保存项目")
+        onActivated: {
+            if (stackView.currentItem && stackView.currentItem.saveProject)
+                stackView.currentItem.saveProject()
+            else
+                console.log("保存项目")
+        }
     }
 
     Shortcut {
         sequence: "Space"
-        onActivated: console.log("播放/暂停")
+        onActivated: {
+            if (stackView.currentItem && stackView.currentItem.togglePlayPause)
+                stackView.currentItem.togglePlayPause()
+            else
+                console.log("播放/暂停")
+        }
+    }
+
+    // 可选：监听登出事件，返回到登录页
+    Connections {
+        target: businessController   // 需确保已在 main.cpp 中注册
+        function onLogout() {
+            stackView.replace(loginPageComponent)
+        }
     }
 }

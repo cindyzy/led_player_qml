@@ -57,6 +57,58 @@ int main(int argc, char *argv[])
     }
     engine.rootContext()->setContextProperty("businessController", businessController);
 
+    // ==================== 用户管理功能演示 ====================
+    // 1. 检查是否存在管理员角色，不存在则创建
+    const QString adminUsername = "admin";
+    const QString adminPassword = "admin123";
+    const QString adminRoleName = "管理员";
+
+    int adminRoleId = 0;
+    auto adminRole = businessController->getRoleByName(adminRoleName);
+    if (!adminRole.has_value()) {
+        qInfo() << "管理员角色不存在，正在创建...";
+        bool roleCreated = businessController->createRole(adminRoleName, "管理员用户拥有所有权限", "system");
+        if (roleCreated) {
+            qInfo() << "管理员角色创建成功";
+            auto newRole = businessController->getRoleByName(adminRoleName);
+            if (newRole.has_value()) {
+                adminRoleId = newRole->roleId();
+            }
+        }
+    } else {
+        adminRoleId = adminRole->roleId();
+        qInfo() << "管理员角色已存在，roleId:" << adminRoleId;
+    }
+
+    // 2. 检查是否存在管理员用户，不存在则创建
+    auto existingUser = businessController->getUserByName(adminUsername);
+    if (!existingUser.has_value()) {
+        qInfo() << "管理员用户不存在，正在创建默认管理员...";
+        bool createSuccess = businessController->createUser(adminUsername, adminPassword, adminRoleId, "system");
+        if (createSuccess) {
+            qInfo() << "默认管理员创建成功: " << adminUsername << " with roleId:" << adminRoleId;
+        } else {
+            qWarning() << "创建默认管理员失败";
+        }
+    } else {
+        qInfo() << "管理员用户已存在: " << adminUsername;
+    }
+
+    // 2. 演示用户登录验证功能
+    qInfo() << "\n=== 登录验证演示 ===";
+    bool loginSuccess = businessController->login(adminUsername, adminPassword);
+    if (loginSuccess) {
+        qInfo() << "登录成功！欢迎, " << adminUsername;
+    } else {
+        qInfo() << "登录失败！用户名或密码错误";
+    }
+
+    // 3. 演示错误密码登录
+    bool failedLogin = businessController->login(adminUsername, "wrongpassword");
+    if (!failedLogin) {
+        qInfo() << "错误密码验证: 登录失败（预期行为）";
+    }
+
     // 创建 PlaylistTreeModel 实例并设置 BusinessController
     PlaylistTreeModel* playlistTreeModel = new PlaylistTreeModel(&engine);
     playlistTreeModel->setBusinessController(businessController);

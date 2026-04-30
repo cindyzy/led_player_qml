@@ -24,9 +24,9 @@ public:
     static Role fromSqlRecord(const QSqlRecord& record);
 
 private:
-    int m_roleId = 0;
-    QString m_roleName;
-    QString m_roleDesc;
+    int m_roleId = 0;          ///< 角色ID，数据库主键，0 表示未持久化
+    QString m_roleName;        ///< 角色名称，应唯一且非空
+    QString m_roleDesc;        ///< 角色描述，可选信息
 };
 
 } // namespace LEDDB

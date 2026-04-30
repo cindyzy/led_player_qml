@@ -18,11 +18,11 @@ public:
     Q_INVOKABLE QVariant getParamData(int index) const;
     Q_INVOKABLE bool addParam(const QString& sceneType, double sceneThreshold, int predictCycle,
                                double envWeight, double sceneWeight, int brightnessMin, int brightnessMax,
-                               const QString& strategyJson);
+                               const QString& strategyJson, const QString& operatorUser = "system");
     Q_INVOKABLE bool updateParam(int scheduleId, const QString& sceneType, double sceneThreshold,
                                   int predictCycle, double envWeight, double sceneWeight,
-                                  int brightnessMin, int brightnessMax, const QString& strategyJson);
-    Q_INVOKABLE bool deleteParam(int scheduleId);
+                                  int brightnessMin, int brightnessMax, const QString& strategyJson, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deleteParam(int scheduleId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findParamById(int scheduleId) const;
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;

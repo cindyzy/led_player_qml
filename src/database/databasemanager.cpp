@@ -133,7 +133,10 @@ bool DatabaseManager::createTables()
             loop_type INTEGER NOT NULL DEFAULT 1,
             status INTEGER NOT NULL DEFAULT 1,
             create_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            update_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            update_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            program_count INTEGER NOT NULL DEFAULT 0,
+            total_frames INTEGER NOT NULL DEFAULT 0,
+            total_duration REAL NOT NULL DEFAULT 0.0
         )
     )";
 
@@ -164,6 +167,10 @@ bool DatabaseManager::createTables()
             height INTEGER NOT NULL DEFAULT 1080,
             z_index INTEGER NOT NULL DEFAULT 0,
             status INTEGER NOT NULL DEFAULT 1,
+            blend_type INTEGER NOT NULL DEFAULT 0,
+            window_color TEXT,
+            lock_position INTEGER NOT NULL DEFAULT 0,
+            play_count INTEGER NOT NULL DEFAULT 0,
             create_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             update_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
@@ -173,12 +180,18 @@ bool DatabaseManager::createTables()
     createStmts << R"(
         CREATE TABLE IF NOT EXISTS media_source (
             media_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            media_name TEXT NOT NULL,
             file_path TEXT NOT NULL,
             file_type TEXT NOT NULL,
+            media_type TEXT NOT NULL,
             duration REAL NOT NULL DEFAULT 0.0,
+            frames INTEGER NOT NULL DEFAULT 0,
             quality_param TEXT,
             ai_edit_param TEXT,
+            thumbnail_path TEXT,
+            status INTEGER NOT NULL DEFAULT 1,
             create_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            update_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             window_id INTEGER NOT NULL DEFAULT 0,
             media_sort INTEGER NOT NULL DEFAULT 0
         )

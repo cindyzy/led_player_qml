@@ -106,14 +106,14 @@ QList<User> BusinessController::getAllUsers(int offset, int limit)
     return svc.getAllUsers(offset, limit);
 }
 
-bool BusinessController::authenticate(const QString &userName, const QString &password)
-{
-    UserService svc;
-    bool ok = svc.authenticate(userName, password);
-    if (ok) recordAudit(0, "登录", "成功", QString("用户 %1 登录").arg(userName), "sys_user", 0);
-    else recordAudit(0, "登录", "失败", QString("用户 %1 登录失败").arg(userName), "sys_user", 0);
-    return ok;
-}
+// bool BusinessController::authenticate(const QString &userName, const QString &password)
+// {
+//     UserService svc;
+//     bool ok = svc.authenticate(userName, password);
+//     if (ok) recordAudit(0, "登录", "成功", QString("用户 %1 登录").arg(userName), "sys_user", 0);
+//     else recordAudit(0, "登录", "失败", QString("用户 %1 登录失败").arg(userName), "sys_user", 0);
+//     return ok;
+// }
 
 bool BusinessController::changePassword(int userId, const QString &oldPwd, const QString &newPwd, const QString &operatorUser)
 {
@@ -159,6 +159,12 @@ std::optional<Role> BusinessController::getRoleById(int roleId)
 {
     RoleService svc;
     return svc.getRoleById(roleId);
+}
+
+std::optional<Role> BusinessController::getRoleByName(const QString &roleName)
+{
+    RoleService svc;
+    return svc.getRoleByName(roleName);
 }
 
 QList<Role> BusinessController::getAllRoles()
@@ -307,7 +313,7 @@ QList<ProjectConfig> BusinessController::getAllProjects()
 }
 
 // ========== 6. 播放列表管理 ==========
-bool BusinessController::createPlaylist(int projectId, const QString &listName, int loopType, const QString &operatorUser)
+bool BusinessController::createPlaylist(int projectId, const QString &listName, int playSort, int loopType, const QString &operatorUser)
 {
     PlayListService svc;
     PlayList pl;
@@ -316,18 +322,25 @@ bool BusinessController::createPlaylist(int projectId, const QString &listName, 
     pl.setLoopType(loopType);
     pl.setStatus(1);
     pl.setPlaySort(svc.getPlayListsByProjectId(projectId).size());
+    pl.setTotalDuration(0);
+    pl.setTotalFrames(0);
+    pl.setProgramCount(0);
     bool ok = svc.createPlayList(pl, operatorUser);
     if (ok) recordAudit(0, "创建播放列表", "成功", QString("在项目 %1 下创建列表 %2").arg(projectId).arg(listName), "play_list", 0);
     return ok;
 }
 
-bool BusinessController::updatePlaylist(int listId, const QString &listName, int loopType, const QString &operatorUser)
+bool BusinessController::updatePlaylist(int listId, const QString &listName, int playSort,int loopType,double duration,long long frames,int count, const QString &operatorUser)
 {
     PlayListService svc;
     auto pl = svc.getPlayListById(listId);
     if (!pl) return false;
     pl->setListName(listName);
     pl->setLoopType(loopType);
+    pl->setTotalDuration(duration);
+    pl->setTotalFrames(frames);
+    pl->setProgramCount(count);
+    pl->setPlaySort(playSort);
     bool ok = svc.updatePlayList(*pl, operatorUser);
     if (ok) recordAudit(0, "更新播放列表", "成功", QString("更新列表 ID=%1").arg(listId), "play_list", listId);
     return ok;
@@ -425,7 +438,8 @@ bool BusinessController::reorderPrograms(int listId, const QList<int>& programId
 }
 
 // ========== 8. 视窗管理 ==========
-bool BusinessController::createWindow(int programId, const QString &windowName, int x, int y, int width, int height, int zIndex, const QString &operatorUser)
+bool BusinessController::createWindow(int programId, const QString &windowName, int x, int y, int width, int height,
+                                     int blendType, const QString &windowColor, int lockPosition, const QString &operatorUser)
 {
     WindowViewService svc;
     WindowView win;
@@ -435,14 +449,18 @@ bool BusinessController::createWindow(int programId, const QString &windowName, 
     win.setYPos(y);
     win.setWidth(width);
     win.setHeight(height);
-    win.setZIndex(zIndex);
+    win.setBlendType(blendType);
+    win.setWindowColor(windowColor);
+    win.setLockPosition(lockPosition);
+    win.setPlayCount(0);
     win.setStatus(1);
     bool ok = svc.createWindow(win, operatorUser);
     if (ok) recordAudit(0, "创建视窗", "成功", QString("在节目 %1 下创建视窗 %2").arg(programId).arg(windowName), "window_view", 0);
     return ok;
 }
 
-bool BusinessController::updateWindow(int windowId, const QString &windowName, int x, int y, int width, int height, int zIndex, const QString &operatorUser)
+bool BusinessController::updateWindow(int windowId, const QString &windowName, int x, int y, int width, int height,
+                                     int blendType, const QString &windowColor, int lockPosition, const QString &operatorUser)
 {
     WindowViewService svc;
     auto win = svc.getWindowById(windowId);
@@ -452,7 +470,9 @@ bool BusinessController::updateWindow(int windowId, const QString &windowName, i
     win->setYPos(y);
     win->setWidth(width);
     win->setHeight(height);
-    win->setZIndex(zIndex);
+    win->setBlendType(blendType);
+    win->setWindowColor(windowColor);
+    win->setLockPosition(lockPosition);
     bool ok = svc.updateWindow(*win, operatorUser);
     if (ok) recordAudit(0, "更新视窗", "成功", QString("更新视窗 ID=%1").arg(windowId), "window_view", windowId);
     return ok;
@@ -514,7 +534,7 @@ bool BusinessController::addMedia(int windowId, const QString &filePath, const Q
     return ok;
 }
 
-bool BusinessController::updateMedia(int mediaId, const QString &filePath, const QString &fileType, double duration, int mediaSort, const QString &operatorUser)
+bool BusinessController::updateMedia(int mediaId, const QString &filePath, const QString &fileType, double duration, int mediaSort, const QString &mediaName, int status, const QString &operatorUser)
 {
     MediaSourceService svc;
     auto media = svc.getMediaById(mediaId);
@@ -523,6 +543,8 @@ bool BusinessController::updateMedia(int mediaId, const QString &filePath, const
     media->setFileType(fileType);
     media->setDuration(duration);
     media->setMediaSort(mediaSort);
+    media->setMediaName(mediaName);
+    media->setStatus(status);
     bool ok = svc.updateMedia(*media, operatorUser);
     if (ok) recordAudit(0, "更新素材", "成功", QString("更新素材 ID=%1").arg(mediaId), "media_source", mediaId);
     return ok;
@@ -635,10 +657,37 @@ QList<AiModelConfig> BusinessController::getAllAiModels()
 }
 
 // ========== 12. 场景统计 ==========
-bool BusinessController::recordSceneData(const SceneStatistic &stat)
+bool BusinessController::recordSceneStatistic(const SceneStatistic &stat, const QString &operatorUser)
 {
+    Q_UNUSED(operatorUser);
     SceneStatisticService svc;
     return svc.recordSceneData(stat);
+}
+
+bool BusinessController::updateSceneStatistic(const SceneStatistic &stat, const QString &operatorUser)
+{
+    Q_UNUSED(operatorUser);
+    SceneStatisticService svc;
+    return svc.updateSceneStatistic(stat);
+}
+
+bool BusinessController::deleteSceneStatistic(int statId, const QString &operatorUser)
+{
+    Q_UNUSED(operatorUser);
+    SceneStatisticService svc;
+    return svc.deleteSceneStatistic(statId);
+}
+
+std::optional<SceneStatistic> BusinessController::getStatisticById(int statId)
+{
+    SceneStatisticService svc;
+    return svc.getStatisticById(statId);
+}
+
+QList<SceneStatistic> BusinessController::getAllStatistics()
+{
+    SceneStatisticService svc;
+    return svc.getAllStatistics();
 }
 
 QList<SceneStatistic> BusinessController::getStatisticsByProject(int projectId)
@@ -703,4 +752,62 @@ QString BusinessController::getCurrentOperator()
     // 实际应用中应从登录会话中获取当前用户名，这里简单返回一个固定值
     return "system";
 }
+// business/BusinessController.cpp（新增实现）
+#include "../core/session/sessionmanager.h"
+#include "../core/auth/authenticatorfactory.h"
 
+bool BusinessController::login(const QString& username, const QString& password)
+{
+    auto authenticator = AuthenticatorFactory::create(AuthType::Password);
+    AuthResult result = authenticator->authenticate(username, password);
+
+    if (result.success) {
+        SessionManager::instance().login(result.userId, result.userName, result.roleId);
+        // 记录审计日志
+        AuditLogService audit;
+        audit.logOperation(result.userId, "登录", "成功",
+                           QString("用户 %1 登录系统").arg(username), "sys_user", result.userId, "");
+        return true;
+    } else {
+        // 记录失败日志（使用系统用户0）
+        AuditLogService audit;
+        audit.logOperation(0, "登录", "失败", result.errorMessage, "sys_user", 0, "");
+        qWarning() << "Login failed:" << result.errorMessage;
+        return false;
+    }
+}
+
+void BusinessController::logout()
+{
+    int userId = SessionManager::instance().currentUserId();
+    SessionManager::instance().logout();
+    AuditLogService audit;
+    audit.logOperation(userId, "登出", "成功", "用户登出系统", "sys_user", userId, "");
+}
+
+bool BusinessController::isLoggedIn() const
+{
+    return SessionManager::instance().isLoggedIn();
+}
+
+int BusinessController::currentUserId() const
+{
+    return SessionManager::instance().currentUserId();
+}
+
+QString BusinessController::currentUserName() const
+{
+    return SessionManager::instance().currentUserName();
+}
+
+int BusinessController::currentRoleId() const
+{
+    return SessionManager::instance().currentRoleId();
+}
+bool BusinessController::hasPermission(const QString& permCode)
+{
+    if (!isLoggedIn()) return false;
+    int roleId = SessionManager::instance().currentRoleId();
+    PermissionService permSvc;
+    return permSvc.hasPermission(roleId, permCode);
+}

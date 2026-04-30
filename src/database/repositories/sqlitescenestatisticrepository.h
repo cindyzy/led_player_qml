@@ -10,7 +10,10 @@ namespace Repository {
 class SqliteSceneStatisticRepository : public ISceneStatisticRepository {
 public:
     bool insert(const LEDDB::SceneStatistic& stat) override;
+    bool update(const LEDDB::SceneStatistic& stat) override;
     bool deleteById(int statId) override;
+    std::optional<LEDDB::SceneStatistic> findById(int statId) override;
+    QList<LEDDB::SceneStatistic> findAll() override;
     QList<LEDDB::SceneStatistic> findByTimeRange(const QDateTime& start, const QDateTime& end) override;
     QList<LEDDB::SceneStatistic> findLatest(int limit = 100) override;
     QList<LEDDB::SceneStatistic> findByProjectId(int projectId) override;

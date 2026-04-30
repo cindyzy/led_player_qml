@@ -17,11 +17,11 @@ public:
     Q_INVOKABLE bool loadProjects();
     Q_INVOKABLE QVariant getProjectData(int index) const;
     Q_INVOKABLE bool addProject(const QString& projectName, const QString& windowLayout,
-                                 const QString& lightMapping, const QString& cronStrategy);
+                                 const QString& lightMapping, const QString& cronStrategy, const QString& operatorUser = "system");
     Q_INVOKABLE bool updateProject(int projectId, const QString& projectName,
                                    const QString& windowLayout, const QString& lightMapping,
-                                   const QString& cronStrategy, int isValid);
-    Q_INVOKABLE bool deleteProject(int projectId);
+                                   const QString& cronStrategy, int isValid, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deleteProject(int projectId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findProjectById(int projectId) const;
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;

@@ -11,8 +11,8 @@ using namespace Repository;
 bool SqlitePlayListRepository::insert(const LEDDB::PlayList& playlist) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare(R"(
-        INSERT INTO play_list (project_id, list_name, play_sort, loop_type, status, create_time, update_time)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO play_list (project_id, list_name, play_sort, loop_type, status, create_time, update_time, program_count, total_frames, total_duration)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
     query.addBindValue(playlist.projectId());
     query.addBindValue(playlist.listName());
@@ -21,6 +21,9 @@ bool SqlitePlayListRepository::insert(const LEDDB::PlayList& playlist) {
     query.addBindValue(playlist.status());
     query.addBindValue(toIsoString(playlist.createTime()));
     query.addBindValue(toIsoString(playlist.updateTime()));
+    query.addBindValue(playlist.programCount());
+    query.addBindValue(playlist.totalFrames());
+    query.addBindValue(playlist.totalDuration());
     return query.exec();
 }
 
@@ -28,7 +31,7 @@ bool SqlitePlayListRepository::update(const LEDDB::PlayList& playlist) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare(R"(
         UPDATE play_list SET project_id=?, list_name=?, play_sort=?, loop_type=?,
-        status=?, update_time=? WHERE list_id=?
+        status=?, update_time=?, program_count=?, total_frames=?, total_duration=? WHERE list_id=?
     )");
     query.addBindValue(playlist.projectId());
     query.addBindValue(playlist.listName());
@@ -36,6 +39,9 @@ bool SqlitePlayListRepository::update(const LEDDB::PlayList& playlist) {
     query.addBindValue(playlist.loopType());
     query.addBindValue(playlist.status());
     query.addBindValue(toIsoString(playlist.updateTime()));
+    query.addBindValue(playlist.programCount());
+    query.addBindValue(playlist.totalFrames());
+    query.addBindValue(playlist.totalDuration());
     query.addBindValue(playlist.listId());
     return query.exec();
 }

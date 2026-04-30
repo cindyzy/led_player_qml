@@ -127,7 +127,7 @@ bool UserModel::authenticate(const QString& userName, const QString& password)
         qDebug() << "UserModel: BusinessController not set!";
         return false;
     }
-    return m_businessController->authenticate(userName, password);
+    return m_businessController->login(userName, password);
 }
 
 int UserModel::rowCount(const QModelIndex& parent) const

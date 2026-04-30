@@ -12,8 +12,8 @@ bool SqliteWindowViewRepository::insert(const LEDDB::WindowView& view) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare(R"(
         INSERT INTO window_view (program_id, window_name, x_pos, y_pos, width, height,
-        z_index, status, create_time, update_time)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        z_index, status, blend_type, window_color, lock_position, play_count, create_time, update_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
     query.addBindValue(view.programId());
     query.addBindValue(view.windowName());
@@ -23,6 +23,10 @@ bool SqliteWindowViewRepository::insert(const LEDDB::WindowView& view) {
     query.addBindValue(view.height());
     query.addBindValue(view.zIndex());
     query.addBindValue(view.status());
+    query.addBindValue(view.blendType());
+    query.addBindValue(view.windowColor());
+    query.addBindValue(view.lockPosition());
+    query.addBindValue(view.playCount());
     query.addBindValue(toIsoString(view.createTime()));
     query.addBindValue(toIsoString(view.updateTime()));
     return query.exec();
@@ -32,8 +36,8 @@ bool SqliteWindowViewRepository::update(const LEDDB::WindowView& view) {
     QSqlQuery query(DatabaseManager::instance().getDatabase());
     query.prepare(R"(
         UPDATE window_view SET program_id=?, window_name=?, x_pos=?, y_pos=?,
-        width=?, height=?, z_index=?, status=?, update_time=?
-        WHERE window_id=?
+        width=?, height=?, z_index=?, status=?, blend_type=?, window_color=?,
+        lock_position=?, play_count=?, update_time=? WHERE window_id=?
     )");
     query.addBindValue(view.programId());
     query.addBindValue(view.windowName());
@@ -43,6 +47,10 @@ bool SqliteWindowViewRepository::update(const LEDDB::WindowView& view) {
     query.addBindValue(view.height());
     query.addBindValue(view.zIndex());
     query.addBindValue(view.status());
+    query.addBindValue(view.blendType());
+    query.addBindValue(view.windowColor());
+    query.addBindValue(view.lockPosition());
+    query.addBindValue(view.playCount());
     query.addBindValue(toIsoString(view.updateTime()));
     query.addBindValue(view.windowId());
     return query.exec();

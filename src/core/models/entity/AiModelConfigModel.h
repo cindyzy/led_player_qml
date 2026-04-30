@@ -18,11 +18,11 @@ public:
     Q_INVOKABLE QVariant getConfigData(int index) const;
     Q_INVOKABLE bool addConfig(const QString& modelName, const QString& modelPath,
                                 const QString& apiEndpoint, const QString& apiKey,
-                                int timeout, const QString& modelParams);
+                                int timeout, const QString& modelParams, const QString& operatorUser = "system");
     Q_INVOKABLE bool updateConfig(int configId, const QString& modelName, const QString& modelPath,
                                    const QString& apiEndpoint, const QString& apiKey,
-                                   int timeout, const QString& modelParams, int status);
-    Q_INVOKABLE bool deleteConfig(int configId);
+                                   int timeout, const QString& modelParams, int status, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deleteConfig(int configId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findConfigById(int configId) const;
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;

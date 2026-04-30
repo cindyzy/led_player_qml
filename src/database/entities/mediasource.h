@@ -16,7 +16,7 @@ public:
                 double duration, const QString& qualityParam, const QString& aiEditParam,
                 const QString& thumbnailPath, int status,
                 const QDateTime& createTime, const QDateTime& updateTime,
-                int windowId, int mediaSort);
+                int windowId, int mediaSort, long long frames = 0);
 
     // ---------- getters ----------
     int mediaId() const { return m_mediaId; }
@@ -33,6 +33,7 @@ public:
     QDateTime updateTime() const { return m_updateTime; }
     int windowId() const { return m_windowId; }
     int mediaSort() const { return m_mediaSort; }
+    long long frames() const { return m_frames; }
 
     // ---------- setters ----------
     void setMediaId(int id) { m_mediaId = id; }
@@ -49,6 +50,7 @@ public:
     void setUpdateTime(const QDateTime& dt) { m_updateTime = dt; }
     void setWindowId(int id) { m_windowId = id; }
     void setMediaSort(int sort) { m_mediaSort = sort; }
+    void setFrames(long long frames) { m_frames = frames; }
 
     static MediaSource fromSqlRecord(const QSqlRecord& record);
 
@@ -67,6 +69,7 @@ private:
     QDateTime m_updateTime;         // 最后更新时间
     int m_windowId = 0;             // 所属视窗 ID
     int m_mediaSort = 0;            // 播放排序序号
+    long long m_frames = 0;         // 帧数
 };
 
 } // namespace LEDDB

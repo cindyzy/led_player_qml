@@ -118,6 +118,14 @@ add_executable(LedPlayer
     src/database/services/scenestatisticservice.h src/database/services/scenestatisticservice.cpp
     src/database/services/auditlogservice.h src/database/services/auditlogservice.cpp
     src/business/businesscontroller.h src/business/businesscontroller.cpp
+    src/core/session/sessionmanager.h src/core/session/sessionmanager.cpp
+    src/core/auth/IAuthenticator.h
+    src/core/auth/PasswordAuthenticator.h
+    src/core/auth/PasswordAuthenticator.cpp
+    src/core/auth/authenticatorfactory.h src/core/auth/authenticatorfactory.cpp
+
+
+
 
 
 

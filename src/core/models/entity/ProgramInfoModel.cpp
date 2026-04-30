@@ -16,8 +16,12 @@ bool ProgramInfoModel::loadPrograms(int listId)
         qDebug() << "ProgramInfoModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::ProgramInfo> programs;
+    if (listId > 0) {
+        programs = m_businessController->getProgramsByPlaylist(listId);
+    }
     beginResetModel();
-    m_programs.clear();
+    m_programs = programs;
     endResetModel();
     emit countChanged();
     return true;
@@ -38,34 +42,43 @@ QVariant ProgramInfoModel::getProgramData(int index) const
     return map;
 }
 
-bool ProgramInfoModel::addProgram(int listId, const QString& programName, double startTime, double endTime)
+bool ProgramInfoModel::addProgram(int listId, const QString& programName, double startTime, double endTime, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ProgramInfoModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ProgramInfoModel: addProgram called -" << programName;
-    return true;
+    bool success = m_businessController->createProgram(listId, programName, startTime, endTime, operatorUser);
+    if (success) {
+        loadPrograms(listId);
+    }
+    return success;
 }
 
-bool ProgramInfoModel::updateProgram(int programId, const QString& programName, double startTime, double endTime)
+bool ProgramInfoModel::updateProgram(int programId, const QString& programName, double startTime, double endTime, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ProgramInfoModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ProgramInfoModel: updateProgram called -" << programId;
-    return true;
+    bool success = m_businessController->updateProgram(programId, programName, startTime, endTime, operatorUser);
+    if (success) {
+        loadPrograms(0);
+    }
+    return success;
 }
 
-bool ProgramInfoModel::deleteProgram(int programId)
+bool ProgramInfoModel::deleteProgram(int programId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "ProgramInfoModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "ProgramInfoModel: deleteProgram called -" << programId;
-    return true;
+    bool success = m_businessController->deleteProgram(programId, operatorUser);
+    if (success) {
+        loadPrograms(0);
+    }
+    return success;
 }
 
 QVariant ProgramInfoModel::findProgramById(int programId) const

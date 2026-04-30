@@ -16,9 +16,9 @@ public:
     void setBusinessController(BusinessController* controller);
     Q_INVOKABLE bool loadPlayLists(int projectId = 0);
     Q_INVOKABLE QVariant getPlayListData(int index) const;
-    Q_INVOKABLE bool addPlayList(int projectId, const QString& listName, int playSort, int loopType);
-    Q_INVOKABLE bool updatePlayList(int listId, const QString& listName, int playSort, int loopType, int status);
-    Q_INVOKABLE bool deletePlayList(int listId);
+    Q_INVOKABLE bool addPlayList(int projectId, const QString& listName, int playSort, int loopType, const QString& operatorUser = "system");
+    Q_INVOKABLE bool updatePlayList(int listId, const QString& listName, int playSort, int loopType,double duration,long long frames,int count, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deletePlayList(int listId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findPlayListById(int listId) const;
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;

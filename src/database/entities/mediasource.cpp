@@ -11,7 +11,7 @@ MediaSource::MediaSource(int mediaId, const QString& mediaName, const QString& f
                          double duration, const QString& qualityParam, const QString& aiEditParam,
                          const QString& thumbnailPath, int status,
                          const QDateTime& createTime, const QDateTime& updateTime,
-                         int windowId, int mediaSort)
+                         int windowId, int mediaSort, long long frames)
     : m_mediaId(mediaId)
     , m_mediaName(mediaName)
     , m_filePath(filePath)
@@ -26,6 +26,7 @@ MediaSource::MediaSource(int mediaId, const QString& mediaName, const QString& f
     , m_updateTime(updateTime)
     , m_windowId(windowId)
     , m_mediaSort(mediaSort)
+    , m_frames(frames)
 {
 }
 
@@ -46,6 +47,7 @@ MediaSource MediaSource::fromSqlRecord(const QSqlRecord& record)
     ms.setUpdateTime(fromIsoString(record.value("update_time").toString()));
     ms.setWindowId(record.value("window_id").toInt());
     ms.setMediaSort(record.value("media_sort").toInt());
+    ms.setFrames(record.value("frames").toLongLong());
     return ms;
 }
 

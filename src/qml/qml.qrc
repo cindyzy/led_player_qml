@@ -39,5 +39,6 @@
         <file>components/SkinSwitcher.qml</file>
         <file>skins/Dark/Skin.qml</file>
         <file>skins/Blue/Skin.qml</file>
+        <file>dialogs/LoginPage.qml</file>
     </qresource>
 </RCC>

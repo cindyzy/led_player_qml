@@ -7,10 +7,14 @@ namespace LEDDB {
 
 WindowView::WindowView(int windowId, int programId, const QString& windowName,
                        int xPos, int yPos, int width, int height, int zIndex,
-                       int status, const QDateTime& createTime, const QDateTime& updateTime)
+                       int status, int blendType, const QString& windowColor,
+                       int lockPosition, int playCount,
+                       const QDateTime& createTime, const QDateTime& updateTime)
     : m_windowId(windowId), m_programId(programId), m_windowName(windowName),
     m_xPos(xPos), m_yPos(yPos), m_width(width), m_height(height), m_zIndex(zIndex),
-    m_status(status), m_createTime(createTime), m_updateTime(updateTime) {}
+    m_status(status), m_blendType(blendType), m_windowColor(windowColor),
+    m_lockPosition(lockPosition), m_playCount(playCount),
+    m_createTime(createTime), m_updateTime(updateTime) {}
 
 WindowView WindowView::fromSqlRecord(const QSqlRecord& rec)
 {
@@ -24,6 +28,10 @@ WindowView WindowView::fromSqlRecord(const QSqlRecord& rec)
     wv.setHeight(rec.value("height").toInt());
     wv.setZIndex(rec.value("z_index").toInt());
     wv.setStatus(rec.value("status").toInt());
+    wv.setBlendType(rec.value("blend_type").toInt());
+    wv.setWindowColor(rec.value("window_color").toString());
+    wv.setLockPosition(rec.value("lock_position").toInt());
+    wv.setPlayCount(rec.value("play_count").toInt());
     wv.setCreateTime(fromIsoString(rec.value("create_time").toString()));
     wv.setUpdateTime(fromIsoString(rec.value("update_time").toString()));
     return wv;

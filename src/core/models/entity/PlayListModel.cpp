@@ -16,8 +16,14 @@ bool PlayListModel::loadPlayLists(int projectId)
         qDebug() << "PlayListModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::PlayList> playLists;
+    if (projectId > 0) {
+        playLists = m_businessController->getPlaylistsByProject(projectId);
+    } else {
+        playLists = m_businessController->getAllPlaylists();
+    }
     beginResetModel();
-    m_playLists.clear();
+    m_playLists = playLists;
     endResetModel();
     emit countChanged();
     return true;
@@ -43,35 +49,43 @@ QVariant PlayListModel::getPlayListData(int index) const
     return map;
 }
 
-bool PlayListModel::addPlayList(int projectId, const QString& listName, int playSort, int loopType)
+bool PlayListModel::addPlayList(int projectId, const QString& listName, int playSort, int loopType, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "PlayListModel: BusinessController not set!";
         return false;
     }
-
-    qDebug() << "PlayListModel: addPlayList called -" << listName;
-    return true;
+    bool success = m_businessController->createPlaylist(projectId, listName, playSort, loopType, operatorUser);
+    if (success) {
+        loadPlayLists(projectId);
+    }
+    return success;
 }
 
-bool PlayListModel::updatePlayList(int listId, const QString& listName, int playSort, int loopType, int status)
+bool PlayListModel::updatePlayList(int listId, const QString& listName, int playSort, int loopType,double duration,long long frames,int count, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "PlayListModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "PlayListModel: updatePlayList called -" << listId;
-    return true;
+    bool success = m_businessController->updatePlaylist(listId, listName, playSort, loopType, duration, frames, count, operatorUser);
+    if (success) {
+        loadPlayLists(0);
+    }
+    return success;
 }
 
-bool PlayListModel::deletePlayList(int listId)
+bool PlayListModel::deletePlayList(int listId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "PlayListModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "PlayListModel: deletePlayList called -" << listId;
-    return true;
+    bool success = m_businessController->deletePlaylist(listId, operatorUser);
+    if (success) {
+        loadPlayLists(0);
+    }
+    return success;
 }
 
 QVariant PlayListModel::findPlayListById(int listId) const

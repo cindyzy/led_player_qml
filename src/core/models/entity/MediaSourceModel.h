@@ -17,9 +17,9 @@ public:
     Q_INVOKABLE bool loadMedias(int windowId = 0);
     Q_INVOKABLE QVariant getMediaData(int index) const;
     Q_INVOKABLE bool addMedia(int windowId, const QString& filePath, const QString& mediaName,
-                               double duration, int mediaType, const QString& thumbnailPath);
-    Q_INVOKABLE bool updateMedia(int mediaId, const QString& mediaName, double duration, int status);
-    Q_INVOKABLE bool deleteMedia(int mediaId);
+                               double duration, const QString& mediaType, const QString& thumbnailPath, const QString& operatorUser = "system");
+    Q_INVOKABLE bool updateMedia(int mediaId, const QString& mediaName, double duration, int status, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deleteMedia(int mediaId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findMediaById(int mediaId) const;
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;

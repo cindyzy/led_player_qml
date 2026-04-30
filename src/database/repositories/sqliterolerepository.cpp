@@ -38,6 +38,14 @@ std::optional<LEDDB::Role> SqliteRoleRepository::findById(int roleId) {
     return LEDDB::Role::fromSqlRecord(query.record());
 }
 
+std::optional<LEDDB::Role> SqliteRoleRepository::findByName(const QString& roleName) {
+    QSqlQuery query(DatabaseManager::instance().getDatabase());
+    query.prepare("SELECT * FROM sys_role WHERE role_name = ?");
+    query.addBindValue(roleName);
+    if (!query.exec() || !query.next()) return std::nullopt;
+    return LEDDB::Role::fromSqlRecord(query.record());
+}
+
 QList<LEDDB::Role> SqliteRoleRepository::findAll() {
     QList<LEDDB::Role> list;
     QSqlQuery query("SELECT * FROM sys_role", DatabaseManager::instance().getDatabase());

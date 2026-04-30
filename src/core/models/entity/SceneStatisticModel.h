@@ -17,9 +17,9 @@ public:
     Q_INVOKABLE bool loadStatistics(int projectId = 0);
     Q_INVOKABLE QVariant getStatisticData(int index) const;
     Q_INVOKABLE bool addStatistic(int projectId, const QString& sceneType, int playCount,
-                                   double totalDuration, const QDateTime& statDate);
-    Q_INVOKABLE bool updateStatistic(int statId, int playCount, double totalDuration);
-    Q_INVOKABLE bool deleteStatistic(int statId);
+                                   double totalDuration, const QDateTime& statDate, const QString& operatorUser = "system");
+    Q_INVOKABLE bool updateStatistic(int statId, int playCount, double totalDuration, const QString& operatorUser = "system");
+    Q_INVOKABLE bool deleteStatistic(int statId, const QString& operatorUser = "system");
     Q_INVOKABLE QVariant findStatisticById(int statId) const;
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;

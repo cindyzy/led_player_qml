@@ -17,6 +17,9 @@ bool PlayListService::createPlayList(const PlayList& playlist, const QString& op
     PlayList newPl = playlist;
     newPl.setCreateTime(QDateTime::currentDateTime());
     newPl.setUpdateTime(QDateTime::currentDateTime());
+    newPl.setProgramCount(0);
+    newPl.setTotalFrames(0);
+    newPl.setTotalDuration(0.0);
     bool success = plRepo->insert(newPl);
     int userId = 0;
     auto userRepo = RepositoryFactory::createUserRepository();
@@ -97,17 +100,87 @@ bool PlayListService::deletePlayList(int listId, const QString& operatorUser) {
 
 std::optional<PlayList> PlayListService::getPlayListById(int listId) {
     auto plRepo = RepositoryFactory::createPlayListRepository();
-    return plRepo->findById(listId);
+    auto optPl = plRepo->findById(listId);
+    if (!optPl.has_value()) return std::nullopt;
+
+    PlayList pl = optPl.value();
+    auto progRepo = RepositoryFactory::createProgramInfoRepository();
+    auto viewRepo = RepositoryFactory::createWindowViewRepository();
+    auto mediaRepo = RepositoryFactory::createMediaSourceRepository();
+    auto programs = progRepo->findByListId(pl.listId());
+    int programCount = programs.size();
+    long long totalFrames = 0;
+    double totalDuration = 0.0;
+    for (const auto& prog : programs) {
+        auto windows = viewRepo->findByProgramId(prog.programId());
+        for (const auto& win : windows) {
+            auto medias = mediaRepo->findByWindowId(win.windowId());
+            for (const auto& media : medias) {
+                totalFrames += media.frames();
+                totalDuration += media.duration();
+            }
+        }
+    }
+    pl.setProgramCount(programCount);
+    pl.setTotalFrames(totalFrames);
+    pl.setTotalDuration(totalDuration);
+    return pl;
 }
 
 QList<PlayList> PlayListService::getAllPlayLists() {
     auto plRepo = RepositoryFactory::createPlayListRepository();
-    return plRepo->findAll();
+    QList<PlayList> lists = plRepo->findAll();
+    auto progRepo = RepositoryFactory::createProgramInfoRepository();
+    auto viewRepo = RepositoryFactory::createWindowViewRepository();
+    auto mediaRepo = RepositoryFactory::createMediaSourceRepository();
+    for (auto& pl : lists) {
+        auto programs = progRepo->findByListId(pl.listId());
+        int programCount = programs.size();
+        long long totalFrames = 0;
+        double totalDuration = 0.0;
+        for (const auto& prog : programs) {
+            auto windows = viewRepo->findByProgramId(prog.programId());
+            for (const auto& win : windows) {
+                auto medias = mediaRepo->findByWindowId(win.windowId());
+                for (const auto& media : medias) {
+                    totalFrames += media.frames();
+                    totalDuration += media.duration();
+                }
+            }
+        }
+        pl.setProgramCount(programCount);
+        pl.setTotalFrames(totalFrames);
+        pl.setTotalDuration(totalDuration);
+    }
+    return lists;
 }
 
 QList<PlayList> PlayListService::getPlayListsByProject(int projectId) {
     auto plRepo = RepositoryFactory::createPlayListRepository();
-    return plRepo->findByProjectId(projectId);
+    QList<PlayList> lists = plRepo->findByProjectId(projectId);
+    auto progRepo = RepositoryFactory::createProgramInfoRepository();
+    auto viewRepo = RepositoryFactory::createWindowViewRepository();
+    auto mediaRepo = RepositoryFactory::createMediaSourceRepository();
+    for (auto& pl : lists) {
+        auto programs = progRepo->findByListId(pl.listId());
+        int programCount = programs.size();
+        long long totalFrames = 0;
+        double totalDuration = 0.0;
+        for (const auto& prog : programs) {
+            auto windows = viewRepo->findByProgramId(prog.programId());
+            for (const auto& win : windows) {
+                auto medias = mediaRepo->findByWindowId(win.windowId());
+                for (const auto& media : medias) {
+                    totalFrames += media.frames();
+                    totalDuration += media.duration();
+                }
+            }
+        }
+        pl.setProgramCount(programCount);
+        pl.setTotalFrames(totalFrames);
+        pl.setTotalDuration(totalDuration);
+    }
+    return lists;
 }
 
 QList<PlayList> PlayListService::getPlayListsByProjectId(int projectId) {

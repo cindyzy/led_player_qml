@@ -149,7 +149,8 @@ void PlaylistTreeModel::createWindowNode(int parentIndex, const QString& windowN
         
         // if (programId > 0) {
             // 创建数据库记录
-            if (m_businessController->createWindow(programId, finalWindowName, 0, 0, 1920, 1080, 0, "admin")) {
+            if (m_businessController->createWindow(programId, finalWindowName, 0, 0, 1920, 1080,
+                                               0,"#000000",   1,  "admin")) {
                 qDebug() << "Window created in database:" << finalWindowName;
             }
         // }
@@ -523,7 +524,9 @@ void PlaylistTreeModel::updateMaterialDuration(int index, double newDuration)
     QString materialName = displayData["name"].toString();
     int mediaId = displayData["mediaId"].toInt(0);
     QString filePath = displayData["filePath"].toString();
-    
+    int mediaSort = displayData["mediaSort"].toInt(0);
+    QString mediaName = displayData["mediaName"].toString();
+    int status = displayData["status"].toInt(0);
     if (type != "material") {
         qDebug() << "只能更新素材节点的时长，当前节点类型:" << type;
         return;
@@ -531,7 +534,7 @@ void PlaylistTreeModel::updateMaterialDuration(int index, double newDuration)
 
     // 更新数据库中的素材时长
     if (m_businessController && mediaId > 0) {
-        if (m_businessController->updateMedia(mediaId, filePath, materialName.split(".").last(), newDuration, 0, "admin")) {
+        if (m_businessController->updateMedia(mediaId, filePath, materialName.split(".").last(), newDuration,mediaSort,mediaName, status, "admin")) {
             qDebug() << "Material duration updated in database:" << materialName << "->" << durationToString(newDuration);
         }
     }
@@ -870,10 +873,10 @@ bool PlaylistTreeModel::saveToDatabase(int projectId, const QString& operatorUse
 
             if (listId > 0) {
                 // 更新现有播放列表
-                m_businessController->updatePlaylist(listId, listName, 0, operatorUser);
+                m_businessController->updatePlaylist(listId, listName,0,0,0,0, 0, operatorUser);
             } else {
                 // 创建新播放列表
-                m_businessController->createPlaylist(projectId, listName, 0, operatorUser);
+                m_businessController->createPlaylist(projectId, listName, 0, 0,operatorUser);
             }
         } else if (nodeType == "program") {
             QString programName = nodeData["name"].toString();
@@ -897,7 +900,13 @@ bool PlaylistTreeModel::saveToDatabase(int projectId, const QString& operatorUse
             QString windowName = nodeData["name"].toString();
             int windowId = nodeData["windowId"].toInt(0);
             int parentIndex = nodeData[cParentKey].toInt(-1);
-
+            int xPos = nodeData["xPos"].toInt(0);
+            int yPos = nodeData["yPos"].toInt(0);
+            int width = nodeData["width"].toInt(0);
+            int height = nodeData["height"].toInt(0);
+            int blendType = nodeData["blendType"].toInt(0);
+            QString windowColor = nodeData["windowColor"].toString();
+            int lockPosition = nodeData["lockPosition"].toInt(0);
             // 获取父节点（节目）的ID
             int programId = 0;
             if (parentIndex >= 0) {
@@ -906,17 +915,21 @@ bool PlaylistTreeModel::saveToDatabase(int projectId, const QString& operatorUse
             }
 
             if (windowId > 0) {
-                m_businessController->updateWindow(windowId, windowName, 0, 0, 1920, 1080, 0, operatorUser);
+                m_businessController->updateWindow(windowId, windowName, xPos, yPos, width, height,
+                                                   blendType, windowColor, lockPosition, operatorUser);
             } else if (programId > 0) {
-                m_businessController->createWindow(programId, windowName, 0, 0, 1920, 1080, 0, operatorUser);
+                m_businessController->createWindow(programId, windowName, xPos, yPos, width, height,
+                                                   blendType, windowColor, lockPosition, operatorUser);
             }
         } else if (nodeType == "material") {
             QString fileName = nodeData["name"].toString();
             int mediaId = nodeData["mediaId"].toInt(0);
             double duration = extractDurationFromString(nodeData["duration"].toString());
+            int mediaSort = nodeData["mediaSort"].toInt(0);
             QString filePath = nodeData["filePath"].toString();
             int parentIndex = nodeData[cParentKey].toInt(-1);
-
+            QString mediaName = nodeData["mediaName"].toString();
+            int status = nodeData["status"].toInt(0);
             // 获取父节点（视窗）的ID
             int windowId = 0;
             if (parentIndex >= 0) {
@@ -925,7 +938,8 @@ bool PlaylistTreeModel::saveToDatabase(int projectId, const QString& operatorUse
             }
 
             if (mediaId > 0) {
-                m_businessController->updateMedia(mediaId, filePath, fileName.split(".").last(), duration, 0, operatorUser);
+                m_businessController->updateMedia(mediaId, filePath, fileName.split(".").last(), duration,
+                                     mediaSort,  mediaName, status, operatorUser);
             } else if (windowId > 0) {
                 m_businessController->addMedia(windowId, filePath, fileName.split(".").last(), duration, 0, operatorUser);
             }

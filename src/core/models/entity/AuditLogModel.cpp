@@ -16,8 +16,16 @@ bool AuditLogModel::loadLogs(int userId, const QDateTime& startTime, const QDate
         qDebug() << "AuditLogModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::AuditLog> logs;
+    if (userId > 0) {
+        logs = m_businessController->getLogsByUser(userId,0);
+    } else if (startTime.isValid() && endTime.isValid()) {
+        logs = m_businessController->getLogsByTimeRange(startTime, endTime);
+    } else {
+        logs = m_businessController->getAllLogs();
+    }
     beginResetModel();
-    m_logs.clear();
+    m_logs = logs;
     endResetModel();
     emit countChanged();
     return true;
@@ -39,14 +47,17 @@ QVariant AuditLogModel::getLogData(int index) const
     return map;
 }
 
-bool AuditLogModel::addLog(int userId, const QString& operationType, const QString& operationDesc,
+bool AuditLogModel::addLog(int userId, const QString& operationType,const QString& operateResult, const QString& operationDesc,
                            const QString& targetTable, int targetId, const QString& clientIp)
 {
     if (!m_businessController) {
         qDebug() << "AuditLogModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "AuditLogModel: addLog called -" << operationType;
+     m_businessController->logOperation(userId, operationType,operateResult, operationDesc, targetTable, targetId, clientIp);
+    // if (success) {
+    //     loadLogs(0, QDateTime(), QDateTime());
+    // }
     return true;
 }
 

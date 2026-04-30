@@ -16,8 +16,12 @@ bool WindowViewModel::loadWindows(int programId)
         qDebug() << "WindowViewModel: BusinessController not set!";
         return false;
     }
+    QList<LEDDB::WindowView> windows;
+    if (programId > 0) {
+        windows = m_businessController->getWindowsByProgram(programId);
+    }
     beginResetModel();
-    m_windows.clear();
+    m_windows = windows;
     endResetModel();
     emit countChanged();
     return true;
@@ -35,39 +39,54 @@ QVariant WindowViewModel::getWindowData(int index) const
     map["yPos"] = win.yPos();
     map["width"] = win.width();
     map["height"] = win.height();
+    map["blendType"] = win.blendType();
+    map["windowColor"] = win.windowColor();
+    map["lockPosition"] = win.lockPosition();
+    map["playCount"] = win.playCount();
     map["createTime"] = win.createTime().toString();
     map["updateTime"] = win.updateTime().toString();
     return map;
 }
 
-bool WindowViewModel::addWindow(int programId, const QString& windowName, int xPos, int yPos, int width, int height)
+bool WindowViewModel::addWindow(int programId, const QString& windowName, int xPos, int yPos, int width, int height,
+                             int blendType, const QString& windowColor, int lockPosition, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "WindowViewModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "WindowViewModel: addWindow called -" << windowName;
-    return true;
+    bool success = m_businessController->createWindow(programId, windowName, xPos, yPos, width, height, blendType, windowColor, lockPosition, operatorUser);
+    if (success) {
+        loadWindows(programId);
+    }
+    return success;
 }
 
-bool WindowViewModel::updateWindow(int windowId, const QString& windowName, int xPos, int yPos, int width, int height)
+bool WindowViewModel::updateWindow(int windowId, const QString& windowName, int xPos, int yPos, int width, int height,
+                                int blendType, const QString& windowColor, int lockPosition, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "WindowViewModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "WindowViewModel: updateWindow called -" << windowId;
-    return true;
+    bool success = m_businessController->updateWindow(windowId, windowName, xPos, yPos, width, height, blendType, windowColor, lockPosition, operatorUser);
+    if (success) {
+        loadWindows(0);
+    }
+    return success;
 }
 
-bool WindowViewModel::deleteWindow(int windowId)
+bool WindowViewModel::deleteWindow(int windowId, const QString& operatorUser)
 {
     if (!m_businessController) {
         qDebug() << "WindowViewModel: BusinessController not set!";
         return false;
     }
-    qDebug() << "WindowViewModel: deleteWindow called -" << windowId;
-    return true;
+    bool success = m_businessController->deleteWindow(windowId, operatorUser);
+    if (success) {
+        loadWindows(0);
+    }
+    return success;
 }
 
 QVariant WindowViewModel::findWindowById(int windowId) const
@@ -98,6 +117,10 @@ QVariant WindowViewModel::data(const QModelIndex& index, int role) const
     case YPosRole: return win.yPos();
     case WidthRole: return win.width();
     case HeightRole: return win.height();
+    case BlendTypeRole: return win.blendType();
+    case WindowColorRole: return win.windowColor();
+    case LockPositionRole: return win.lockPosition();
+    case PlayCountRole: return win.playCount();
     case CreateTimeRole: return win.createTime();
     case UpdateTimeRole: return win.updateTime();
     default: return QVariant();
@@ -114,6 +137,10 @@ QHash<int, QByteArray> WindowViewModel::roleNames() const
     roles[YPosRole] = "yPos";
     roles[WidthRole] = "width";
     roles[HeightRole] = "height";
+    roles[BlendTypeRole] = "blendType";
+    roles[WindowColorRole] = "windowColor";
+    roles[LockPositionRole] = "lockPosition";
+    roles[PlayCountRole] = "playCount";
     roles[CreateTimeRole] = "createTime";
     roles[UpdateTimeRole] = "updateTime";
     return roles;

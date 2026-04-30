@@ -17,7 +17,7 @@ public:
     Q_INVOKABLE bool loadLogs(int userId = 0, const QDateTime& startTime = QDateTime(),
                                const QDateTime& endTime = QDateTime());
     Q_INVOKABLE QVariant getLogData(int index) const;
-    Q_INVOKABLE bool addLog(int userId, const QString& operationType, const QString& operationDesc,
+    Q_INVOKABLE bool addLog(int userId, const QString& operationType,const QString& operateResult, const QString& operationDesc,
                             const QString& targetTable, int targetId, const QString& clientIp);
     Q_INVOKABLE QVariant findLogById(int logId) const;
 
